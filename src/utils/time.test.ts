@@ -1,4 +1,12 @@
-import { formatMinutes, parseHHmm, zonedParts } from './time';
+import {
+  addDays,
+  daysBetweenWeekdays,
+  formatMinutes,
+  parseHHmm,
+  weekdayFromDateKey,
+  weekdayIndex,
+  zonedParts,
+} from './time';
 
 describe('parseHHmm', () => {
   it('parses valid 24h times into minutes since midnight', () => {
@@ -52,5 +60,41 @@ describe('zonedParts', () => {
     expect(parts.weekday).toBe('sunday');
     expect(parts.minutes).toBe(20 * 60 + 30);
     expect(parts.dateKey).toBe('2026-10-04');
+  });
+});
+
+describe('addDays', () => {
+  it('shifts calendar dates across month boundaries', () => {
+    expect(addDays('2026-10-05', 7)).toBe('2026-10-12');
+    expect(addDays('2026-10-05', -4)).toBe('2026-10-01');
+    expect(addDays('2026-10-31', 1)).toBe('2026-11-01');
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
+  });
+
+  it('rejects malformed date keys', () => {
+    expect(() => addDays('2026/10/05', 1)).toThrow();
+    expect(() => addDays('', 1)).toThrow();
+  });
+});
+
+describe('weekday helpers', () => {
+  it('maps weekday names to monday-first indexes', () => {
+    expect(weekdayIndex('monday')).toBe(0);
+    expect(weekdayIndex('sunday')).toBe(6);
+    expect(() => weekdayIndex('funday')).toThrow();
+  });
+
+  it('computes forward weekday distances', () => {
+    expect(daysBetweenWeekdays(0, 1)).toBe(1); // mon → tue
+    expect(daysBetweenWeekdays(4, 0)).toBe(3); // fri → mon
+    expect(daysBetweenWeekdays(6, 0)).toBe(1); // sun → mon
+    expect(daysBetweenWeekdays(2, 2)).toBe(0); // same day
+  });
+
+  it('resolves the weekday of a calendar date', () => {
+    expect(weekdayFromDateKey('2026-10-05')).toBe('monday');
+    expect(weekdayFromDateKey('2026-10-10')).toBe('saturday');
+    expect(weekdayFromDateKey('2026-10-11')).toBe('sunday');
+    expect(() => weekdayFromDateKey('nope')).toThrow();
   });
 });

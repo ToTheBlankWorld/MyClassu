@@ -13,6 +13,37 @@
 
   Alternatively set the `ANDROID_HOME` environment variable.
 
+## Supabase environment setup
+
+The cloud layer is optional at runtime (offline-first), but to enable it:
+
+1. Copy `.env.example` to `.env` at the project root.
+2. Fill in the two client-safe values:
+
+   ```properties
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+   ```
+
+3. Apply the database migrations (see below; full schema docs in `docs/DATABASE.md`).
+
+### Secret handling — non-negotiable
+
+- `.env` is gitignored; **never** commit it. Only the placeholder-only `.env.example` is tracked.
+- The PostgreSQL database password, the service-role key, and any AgentMail API key are **server-only**. They must never appear in TypeScript, `.env` on a device, Android resources, docs, or Git.
+- If a secret ever lands in Git history, rotate it — deletion is not enough.
+
+### Migration workflow
+
+Migrations are plain SQL in `supabase/migrations/`, applied in filename order:
+
+```sh
+supabase link --project-ref <ref>   # once
+supabase db push                    # apply pending migrations
+```
+
+Without the CLI: Supabase Dashboard → SQL Editor → run each file in order. Structural invariants of the schema (table set, CHECK vocabularies, RLS coverage, no permissive policies) are enforced by `supabase/migrations/migrations.test.ts` via `npm test`. Schema changes must always land as a new migration file plus a matching update to `src/services/supabase/database.types.ts`.
+
 ## Commands
 
 | Task                              | Command                                   |
@@ -53,8 +84,8 @@ In debug builds Metro must be running (`npm start`); on a physical phone also ru
 ## Testing
 
 - `npm test` runs Jest with the React Native preset.
-- Stage 0 tests cover the bundled timetable data integrity (session count, per-session rooms, lab/project sessions) and the timezone-aware time utilities.
-- Convention: unit-test everything in `domain/`, `utils/` and feature data/queries. Components get interaction tests once the component set stabilizes.
+- Covered today: timetable data integrity, the timetable engine (current/next class, interval boundaries, weekday transitions, weekend & midnight handling, invalid data), the bound `timetableService`, Supabase configuration behavior, and the structural validation of the SQL migrations.
+- Convention: unit-test everything in `domain/`, `utils/` and feature data/engine/service layers. Components get interaction tests once the component set stabilizes.
 
 ## Code style
 

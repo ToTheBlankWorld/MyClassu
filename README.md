@@ -15,14 +15,15 @@ MyClassu answers the questions I actually forget: _Which class is right now? Whe
 
 The project is developed in explicit stages. Each stage is committed and pushed when verified.
 
-### Implemented (Stage 0 — foundation)
+### Implemented (Stage 0 — foundation, Stage 1 — data engine)
 
 - React Native 0.87 (TypeScript, new architecture, Hermes), Android-first
 - Design-token architecture: colors, spacing, typography scale, radii, motion tokens (light + dark themes)
 - Core UI primitives: Text, Screen, Surface, Card, Button, IconButton, Badge, Divider, Stack/Row, EmptyState, LoadingState, toast foundation
 - Navigation shell (React Navigation native stack with placeholder screens)
 - Typed timetable model + the initial weekly timetable as structured local data (all 14 sessions, per-session rooms/instructors, lab and Project/Guide sessions included)
-- Timezone-aware time utilities for `Asia/Kolkata`
+- Timetable query engine: current/next class, upcoming list, day/date/week retrieval, durations and minute math — pure, deterministic, `[start, end)` interval convention, evaluated in `Asia/Kolkata` regardless of device settings
+- Supabase foundation: single client module (env-driven, null-safe when unconfigured), PostgreSQL migrations for profiles/courses/class_sessions/attendance_records/skip_reasons/settings with row-level security on every user-owned table
 - Unit tests (Jest), ESLint, Prettier, type-check wired up
 - Android debug build verified; app launch verified on a physical device
 
@@ -30,15 +31,11 @@ The project is developed in explicit stages. Each stage is committed and pushed 
 
 - Today / weekly timetable UI with gesture-driven day switching
 - Next-class information and live countdown
+- Local persistence (SQLite) and cloud sync via Supabase
 - Class reminders and the class-start alarm (native Android `AlarmManager` + `BroadcastReceiver` + full-screen alarm experience)
 - Attendance marking ("I'm in class" / "I'm not attending") with skip reasons
 - Attendance history and analytics (daily, weekly, course-level, skip reasons)
 - Daily 6:00 PM report and email delivery
-- Local persistence layer
-
-### Future
-
-- Cloud sync / backend
 - iOS support
 
 ## Technology direction
@@ -56,11 +53,13 @@ src/
   components/   Reusable UI primitives (design system)
   design/       Design tokens, themes, theme provider
   domain/       Core models (Course, ClassSession, AttendanceRecord, …)
-  features/     Feature modules (timetable, attendance, alarm, …)
+  features/     Feature modules (timetable engine/service/data, attendance, alarm, …)
   navigation/   Navigation architecture
+  services/     supabase/ — the only module that knows about the cloud
   utils/        Framework-agnostic helpers (timezone-aware time, …)
 android/        Native Android project (Kotlin)
-docs/           Architecture & development documentation
+supabase/       SQL migrations + database docs
+docs/           Architecture, database & development documentation
 ```
 
 `App.tsx` is intentionally tiny; everything real lives under `src/`.

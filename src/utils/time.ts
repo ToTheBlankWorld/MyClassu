@@ -4,7 +4,6 @@ import type { Weekday } from '../domain/models';
  * Timezone-aware helpers. The timetable is expressed in local university time
  * ("HH:mm" wall-clock strings + an IANA zone), never as UTC-derived Date math.
  */
-
 const HHMM_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 /** Parse "HH:mm" (24h) into minutes since midnight; null when malformed. */
@@ -79,3 +78,76 @@ export function zonedParts(date: Date, timeZone: string): ZonedParts {
     dateKey,
   };
 }
+
+/** 0 = monday … 6 = sunday (matches the display order of WEEKDAYS). */
+export function weekdayIndex(weekday: string): number {
+  const index = WEEKDAY_INDEX[weekday];
+  if (index === undefined) {
+    throw new Error(`Invalid weekday: ${weekday}`);
+  }
+  return index;
+}
+
+const WEEKDAY_INDEX: Record<string, number> = {
+  monday: 0,
+  tuesday: 1,
+  wednesday: 2,
+  thursday: 3,
+  friday: 4,
+  saturday: 5,
+  sunday: 6,
+};
+
+/**
+ * Shift a "YYYY-MM-DD" date key by whole days. Works on the UTC clock at
+ * noon (immune to timezone offsets and DST), never touches local time.
+ */
+export function addDays(dateKey: string, days: number): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+  if (!match) {
+    throw new Error(`Invalid date key: ${dateKey}`);
+  }
+  const [, y, m, d] = match;
+  const noonUtc = Date.UTC(Number(y), Number(m) - 1, Number(d), 12);
+  const shifted = new Date(noonUtc + days * 24 * 60 * 60 * 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${shifted.getUTCFullYear()}-${pad(shifted.getUTCMonth() + 1)}-${pad(
+    shifted.getUTCDate(),
+  )}`;
+}
+
+/** Days from `fromWeekday` forward to `toWeekday` (0–6), wrapping a week. */
+export function daysBetweenWeekdays(
+  fromIndex: number,
+  toIndex: number,
+): number {
+  return (toIndex - fromIndex + 7) % 7;
+}
+
+/**
+ * Resolve the weekday of a "YYYY-MM-DD" calendar date. Pure calendar math on
+ * the UTC clock (at noon) — independent of any timezone's offset.
+ */
+export function weekdayFromDateKey(dateKey: string): Weekday {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+  if (!match) {
+    throw new Error(`Invalid date key: ${dateKey}`);
+  }
+  const [, y, m, d] = match;
+  const utcDay = new Date(
+    Date.UTC(Number(y), Number(m) - 1, Number(d), 12),
+  ).getUTCDay();
+  // JS getUTCDay: 0 = sunday … 6 = saturday → convert to monday-first index.
+  const index = (utcDay + 6) % 7;
+  return WEEKDAY_NAMES[index];
+}
+
+const WEEKDAY_NAMES: Weekday[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+];

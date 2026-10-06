@@ -22,3 +22,5 @@ export function getCourseOfSession(session: ClassSession): Course | undefined {
 }
 
 export type { ClassSession, Course } from '../../domain/models';
+export * from './engine/timetableEngine';
+export * from './service/timetableService';

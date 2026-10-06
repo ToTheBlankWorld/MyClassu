@@ -73,3 +73,9 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Environment / secrets — never commit real credentials.
+# .env.example (placeholders only) is the single tracked exception.
+.env
+.env.*
+!.env.example

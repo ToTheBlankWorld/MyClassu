@@ -53,7 +53,23 @@ export interface ClassSession {
   instructor?: string;
 }
 
-export type AttendanceStatus = 'attended' | 'skipped';
+/**
+ * Attendance state — what the USER decided about an occurrence.
+ * Deliberately separate from ScheduleStatus (where the class is in its
+ * lifecycle): a class can be COMPLETED on the schedule but have no attendance
+ * decision yet, and attendance never changes because time passed.
+ */
+export type AttendanceStatus =
+  | 'attended'
+  | 'skipped'
+  | 'pending'
+  | 'unconfirmed';
+
+/**
+ * Schedule lifecycle of a class occurrence, derived purely from time:
+ * upcoming → current → completed. Uses the [start, end) interval convention.
+ */
+export type ScheduleStatus = 'upcoming' | 'current' | 'completed';
 
 export type SkipReasonCategory =
   | 'sick'

@@ -33,9 +33,44 @@ Layer rules:
 
 - **Bare React Native** (RN CLI workflow). The app needs custom native Android code (alarm scheduling, full-screen alarm activity), so Expo managed workflow is not an option; a bare RN project keeps native modules a first-class part of the architecture rather than a bolted-on prebuild step.
 - TypeScript strict via `@react-native/typescript-config`; new architecture + Hermes enabled (defaults of the template).
-- State: deliberately minimal in Stage 0. When attendance state grows, the preference is small feature-local stores over a global monolith.
+- State: deliberately minimal. When attendance state grows, the preference is small feature-local stores over a global monolith.
 
-## 3. Native Android layer (current + future)
+## 3. Timetable engine (Stage 1)
+
+The scheduling brain of the app lives in `src/features/timetable/engine/` — **pure functions** with three hard rules:
+
+1. **No clocks.** Every function takes an explicit `Date` instant; only the service layer defaults to `new Date()`. This makes the whole engine deterministic and unit-testable.
+2. **No device timezone.** All wall-clock math happens on "minutes since midnight" resolved via `Intl` in the timetable's own IANA zone (`Asia/Kolkata`, from `src/utils/time.ts`). A device set to UTC or America/New_York computes identical results.
+3. **Fail fast on bad data.** Malformed times, end-before-start, unknown weekdays, or sessions pointing at missing courses throw `TimetableValidationError` (and the bound service validates the entire bundled timetable at construction).
+
+**Interval convention — `[start, end)`:** a class is _current_ from its exact start minute (inclusive) to its exact end minute (exclusive). At 14:00 a 14:00–14:50 class is current; at 14:49 it is current; at 14:50 it has finished.
+
+**Schedule status vs attendance status** — two independent lifecycles that must never be conflated:
+
+| Concept          | Values                                             | Source                                               |
+| ---------------- | -------------------------------------------------- | ---------------------------------------------------- |
+| Schedule state   | `upcoming` → `current` → `completed`               | Derived from the clock by the engine; never stored   |
+| Attendance state | `attended` / `skipped` / `pending` / `unconfirmed` | A user decision per occurrence; stored (later stage) |
+
+A completed class can still have no attendance decision; an attendance decision never changes because time passed.
+
+Screens consume the bound **`timetableService`** (`getClassesForDay`, `getCurrentClass`, `getNextClass`, `getUpcomingClasses`, `getMinutesUntilClass`, …). Next-class resolution walks forward through the week: later same day → next day → weekend → the Friday→Monday gap, and never returns a class that already started.
+
+**Local model denormalization (intentional):** the bundled timetable is a single module containing courses _and_ their sessions with room/instructor copied onto each session. That is deliberate — offline reads must be zero-join and zero-network, and room/instructor are genuinely per-session facts. The cloud model is normalized; the sync layer (future) maps between them.
+
+### Timetable model
+
+```
+Course 1 ─── n ClassSession
+                 weekday, startTime, endTime
+                 room?, instructor?        ← per-session truth
+```
+
+- **Room and instructor live on the session, not the course.** The same course meets in different rooms on different days (e.g. 24CSEN4121 → ICT/305 Monday, ICT/118 Tuesday). The initial data preserves every such difference.
+- Times are local "HH:mm" strings paired with the timetable's timezone — no epoch arithmetic.
+- A session _occurrence_ (a session on a concrete date) is what attendance refers to: `ClassSession × local date`.
+
+## 4. Native Android layer (current + future)
 
 Currently the native layer is the RN template (Kotlin `MainActivity`/`MainApplication`, package `com.myclassu`), built with Gradle 9.x / AGP / JDK 21.
 
@@ -53,41 +88,55 @@ Future stages add, under `android/app/src/main/java/com/myclassu/`:
 - **Locked screen.** A class-start alarm must be able to wake the screen and present full-screen over the lock — that requires a native activity + full-screen intent, which JS cannot do.
 - **Reliability contract.** The core promise of the product ("it reminds me, always") is a _system-scheduling_ problem, not an app-runtime problem. Any architecture built around JS timers would be structurally unable to keep that promise.
 
-## 4. Local / offline-first philosophy
+## 5. Local-first vs cloud (Supabase) — the split
 
-- The timetable ships as typed local data (`src/features/timetable/data/timetable.ts`) and must never require a network call to render.
-- Attendance records are written locally first; sync/email (later stages) is an _addition_, never a dependency.
-- Time math uses `Intl` with an explicit IANA zone (`Asia/Kolkata`) instead of UTC-shifted `Date` arithmetic, so wall-clock times stay correct regardless of device timezone settings (see `src/utils/time.ts`).
+The app must remain fully usable with Wi-Fi off, mobile data off, or Supabase down. The rule: **anything the reminder/alarm promise depends on is local; everything else is cloud.**
 
-## 5. Timetable model
+| Local source (SQLite/bundled data — always works) | Cloud source (Supabase — enhancement) |
+| ------------------------------------------------- | ------------------------------------- |
+| Timetable (bundled now, local DB later)           | User profile / account                |
+| Today's schedule, current/next class              | Cloud backup & multi-device sync      |
+| Upcoming-class calculation                        | Report generation jobs                |
+| Alarm scheduling (AlarmManager)                   | Server-side functions, email delivery |
 
-```
-Course 1 ─── n ClassSession
-                 weekday, startTime, endTime
-                 room?, instructor?        ← per-session truth
-```
+Concretely: `getSupabaseClient()` returns `null` when the app has no Supabase configuration, and every cloud-backed feature must treat that as a supported state — showing local data, never crashing, never blocking.
 
-- **Room and instructor live on the session, not the course.** The same course meets in different rooms on different days (e.g. 24CSEN4121 → ICT/305 Monday, ICT/118 Tuesday). The initial data preserves every such difference.
-- Times are local "HH:mm" strings paired with the timetable's timezone — no epoch arithmetic.
-- A session _occurrence_ (a session on a concrete date) is what attendance refers to: `ClassSession × local date`.
+## 6. Supabase role & database architecture
 
-## 6. Attendance model (designed now, implemented later)
+`src/services/supabase/` is the **only** place that knows about Supabase:
+
+- `env.ts` reads `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` from `.env` (react-native-config, build-time).
+- `config.ts` validates that pair (pure, unit-tested). Unconfigured is a normal state, not an error.
+- `client.ts` builds the single shared `SupabaseClient` (AsyncStorage-backed auth sessions, URL polyfill). Nothing else may call `createClient`.
+- `database.types.ts` is the TypeScript mirror of the SQL schema.
+
+The PostgreSQL side lives in `supabase/migrations/` as plain, ordered SQL files (reproducible from the repo; see `docs/DATABASE.md`): `profiles`, `courses`, `class_sessions`, `attendance_records`, `skip_reasons`, `notification_settings`, `email_settings` — each user-owned table with RLS scoped to `auth.uid()`, no permissive catch-alls.
+
+**Secrets policy:** the publishable key is client-safe; the PostgreSQL password, the service-role key and any AgentMail API key are server-only and must never enter the app, `.env.example`, or Git.
+
+## 7. Attendance model (schema foundation exists, implementation later)
 
 ```
 AttendanceRecord: id, classSessionId, date (YYYY-MM-DD local),
-                  status: attended | skipped,
+                  status: attended | skipped | pending | unconfirmed,
                   reasonCategory?, reasonText?, markedAt (ISO instant)
 ```
 
-- One record per session occurrence; creating/updating is idempotent per (classSessionId, date).
-- Skip reasons are structured (`SkipReasonCategory`) + optional free text, so skip-reason analytics are queries over data, not string parsing.
+- One record per session occurrence; creating/updating is idempotent per (classSessionId, date) — enforced by a UNIQUE constraint in the cloud schema.
+- Skip reasons are structured (`SkipReasonCategory` + a `skip_reasons` vocabulary table with shared defaults and personal rows), so skip-reason analytics are queries over data, not string parsing.
 - Daily/weekly/course-level statistics and the 6:00 PM report are derived views over these records.
 
-## 7. Future backend / email architecture
+## 8. Future backend / email architecture
 
-The daily report is planned as: local aggregation of the day's records → email via an external mail service (AgentMail is the candidate). The app will hold any credentials in secure storage, the integration will be behind a small `ReportSender` service interface so the provider can be swapped, and — per the offline-first rule — a failed email must never block or corrupt local attendance data.
+The daily report is planned as: local aggregation of the day's records → a server-side job (Supabase Edge Function) → email via an external mail service (AgentMail is the candidate). Any AgentMail credential lives only in the server environment behind a small `ReportSender` interface, and — per the offline-first rule — a failed email must never block or corrupt local attendance data.
 
-## 8. Design system
+## 9. Timezone strategy
+
+- The timetable lives in `Asia/Kolkata` (stored in the timetable data and the user profile).
+- All wall-clock resolution goes through `Intl` (`src/utils/time.ts`): `zonedParts` (weekday/minutes/dateKey in a zone), `addDays` (pure calendar shifts on the UTC-noon clock), `weekdayFromDateKey`.
+- Midnight boundaries and UTC↔IST date shifts are covered by tests (e.g. 19:00 UTC is already "tomorrow" in IST).
+
+## 10. Design system
 
 - `src/design/tokens/` — raw palette, spacing, typography scale, radii, motion (durations, easing curves, symbolic spring configs).
 - `src/design/theme.ts` — semantic roles (surface hierarchy, text roles, accent, status colors, borders) mapped to light and dark values.
