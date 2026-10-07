@@ -93,7 +93,9 @@ const darkColors: ThemeColors = {
   background: palette.gray950,
   surface: palette.gray900,
   surfaceRaised: palette.gray800,
-  surfaceSunken: palette.gray950,
+  // Distinct from background so wells, tracks and skeletons stay visible
+  // when placed directly on it (dark-mode verification finding).
+  surfaceSunken: palette.gray850,
   textPrimary: palette.gray25,
   textSecondary: palette.gray400,
   textMuted: palette.gray500,

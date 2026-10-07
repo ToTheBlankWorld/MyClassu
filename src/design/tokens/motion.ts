@@ -1,12 +1,12 @@
-import { Easing } from 'react-native';
+import { Easing } from 'react-native-reanimated';
 
 /**
  * Motion tokens. Every animation in MyClassu must justify itself (feedback,
  * continuity, or state change) and must use these durations/curves.
  *
- * Springs are preferred for interruptible, gesture-driven motion (Reanimated
- * arrives in the motion stage); duration/curve tokens cover simple
- * enter/exit/feedback transitions in the meantime.
+ * Easing comes from react-native-reanimated (NOT react-native): Reanimated
+ * requires easing functions passed to `withTiming` to be worklet-safe, and
+ * react-native's Easing is plain JS that fails at runtime on device.
  */
 
 export const duration = {
@@ -30,8 +30,8 @@ export const easing = {
 } as const;
 
 /**
- * Reference spring configurations (Reanimated `withSpring` configs, kept
- * symbolic until the motion stage wires Reanimated in).
+ * Spring configurations for Reanimated `withSpring`: small controls,
+ * standard entrances, and playful interruptible handoffs.
  */
 export const spring = {
   /** small controls: toggles, chips, badges */

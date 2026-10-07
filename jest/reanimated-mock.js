@@ -12,6 +12,67 @@
 const NOOP = () => undefined;
 const identity = value => value;
 
+/** Worklet-safe easing functions (mirrors the Reanimated Easing API). */
+function bezier(x1, y1, x2, y2) {
+  // Newton-Raphson evaluation of the cubic Bézier easing curve.
+  return function bezierEasing(t) {
+    if (t <= 0) return 0;
+    if (t >= 1) return 1;
+    const cx = 3 * x1;
+    const bx = 3 * (x2 - x1) - cx;
+    const ax = 1 - cx - bx;
+    const cy = 3 * y1;
+    const by = 3 * (y2 - y1) - cy;
+    const ay = 1 - cy - by;
+    const sampleX = u => ((ax * u + bx) * u + cx) * u;
+    const sampleY = u => ((ay * u + by) * u + cy) * u;
+    const sampleDX = u => (3 * ax * u + 2 * bx) * u + cx;
+    let u = t;
+    for (let i = 0; i < 8; i++) {
+      const currentX = sampleX(u) - t;
+      if (Math.abs(currentX) < 1e-5) break;
+      const d = sampleDX(u);
+      if (Math.abs(d) < 1e-6) break;
+      u -= currentX / d;
+    }
+    return sampleY(u);
+  };
+}
+
+const Easing = {
+  linear: t => t,
+  quad: t => t * t,
+  cubic: t => t * t * t,
+  poly: n => t => Math.pow(t, n),
+  sin: t => 1 - Math.cos((t * Math.PI) / 2),
+  circle: t => 1 - Math.sqrt(1 - t * t),
+  exp: t => Math.pow(2, 10 * (t - 1)),
+  back:
+    (s = 1.70158) =>
+    t =>
+      t * t * ((s + 1) * t - s),
+  bounce: t => {
+    if (t < 1 / 2.75) return 7.5625 * t * t;
+    if (t < 2 / 2.75) return 7.5625 * (t -= 1.5 / 2.75) * t + 0.75;
+    if (t < 2.5 / 2.75) return 7.5625 * (t -= 2.25 / 2.75) * t + 0.9375;
+    return 7.5625 * (t -= 2.625 / 2.75) * t + 0.984375;
+  },
+  elastic:
+    (bounciness = 1) =>
+    t =>
+      Math.pow(2, -10 * t) *
+        Math.sin(((t - 0.075) * (2 * Math.PI)) / 0.3) *
+        bounciness +
+      1,
+  bezier,
+  in: easing => t => easing(t),
+  out: easing => t => 1 - easing(1 - t),
+  inOut: easing => t =>
+    t < 0.5 ? easing(t * 2) / 2 : 1 - easing((1 - t) * 2) / 2,
+  step0: easing => t => t > 0 ? easing(t) : 0,
+  step1: easing => t => t >= 1 ? 1 : easing(t),
+};
+
 /** Immediate linear interpolation between input/output ranges. */
 function interpolate(value, inputRange, outputRange) {
   if (value <= inputRange[0]) {
@@ -131,6 +192,7 @@ module.exports = {
   __esModule: true,
   default: Animated,
   Animated,
+  Easing,
   useSharedValue,
   useAnimatedStyle,
   useDerivedValue,
