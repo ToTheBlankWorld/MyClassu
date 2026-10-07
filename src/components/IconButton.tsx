@@ -1,67 +1,97 @@
 import React from 'react';
+import type { GestureResponderEvent, StyleProp, ViewStyle } from 'react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import {
-  Pressable,
-  Text as RNText,
-  type PressableProps,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
-import { useTheme } from '../design';
+  AnimatedPressable,
+  haptics,
+  usePressScale,
+  useTheme,
+  type IconSizeToken,
+} from '../design';
 
-export interface IconButtonProps extends Omit<PressableProps, 'style'> {
-  /** Single-character glyph or symbol rendered inside the button */
-  glyph: string;
-  /** Accessible name announced by screen readers */
+export interface IconButtonProps
+  extends Omit<
+    React.ComponentProps<typeof AnimatedPressable>,
+    'children' | 'style' | 'onPressIn' | 'onPressOut' | 'ref'
+  > {
+  /** Lucide icon component */
+  glyph: LucideIcon;
+  /** Accessible name announced by screen readers (required) */
   label: string;
-  tone?: 'default' | 'accent';
+  tone?: 'default' | 'accent' | 'destructive';
+  size?: Extract<IconSizeToken, 'sm' | 'md'>;
+  /** Haptic tick on press (defaults to on) */
+  haptic?: boolean;
   style?: StyleProp<ViewStyle>;
+  onPressIn?: (event: GestureResponderEvent) => void;
+  onPressOut?: (event: GestureResponderEvent) => void;
 }
 
 /**
- * Circular icon button. Stage 0 renders a text glyph; a proper icon set slots
- * in here later without changing the call sites.
+ * Round icon-only control. `label` is mandatory — icon-only controls must
+ * always announce themselves. Minimum touch target is generous.
  */
 export function IconButton({
-  glyph,
+  glyph: Glyph,
   label,
   tone = 'default',
+  size = 'md',
+  haptic = true,
   disabled,
   style,
+  onPressIn,
+  onPressOut,
   ...rest
 }: IconButtonProps) {
-  const { colors, spacing, radius } = useTheme();
+  const { colors, iconSize, opacity: opacityToken } = useTheme();
+  const {
+    animatedStyle,
+    onPressIn: scaleIn,
+    onPressOut: scaleOut,
+  } = usePressScale(0.94);
 
-  const foreground = tone === 'accent' ? colors.accent : colors.textSecondary;
+  const box = size === 'sm' ? 38 : 46;
+  const iconToken: IconSizeToken = size === 'sm' ? 'sm' : 'md';
+
+  const foreground =
+    tone === 'accent'
+      ? colors.accent
+      : tone === 'destructive'
+      ? colors.danger
+      : colors.textSecondary;
 
   return (
-    <Pressable
+    <AnimatedPressable
       {...rest}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
-      style={({ pressed }) => [
+      onPressIn={event => {
+        scaleIn();
+        if (haptic) {
+          haptics.light();
+        }
+        onPressIn?.(event);
+      }}
+      onPressOut={event => {
+        scaleOut();
+        onPressOut?.(event);
+      }}
+      style={[
         {
-          width: 40,
-          height: 40,
-          borderRadius: radius.pill,
+          width: box,
+          height: box,
+          borderRadius: box / 2,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: pressed ? colors.surfaceSunken : 'transparent',
-          opacity: disabled ? 0.5 : 1,
+          opacity: disabled ? opacityToken.disabled : 1,
         },
+        animatedStyle,
         style,
       ]}
     >
-      <RNText
-        style={{
-          fontSize: 18,
-          lineHeight: 24,
-          color: foreground,
-          padding: spacing.xs,
-        }}
-      >
-        {glyph}
-      </RNText>
-    </Pressable>
+      <Glyph size={iconSize[iconToken]} color={foreground} strokeWidth={2} />
+    </AnimatedPressable>
   );
 }

@@ -15,13 +15,14 @@ MyClassu answers the questions I actually forget: _Which class is right now? Whe
 
 The project is developed in explicit stages. Each stage is committed and pushed when verified.
 
-### Implemented (Stage 0 — foundation, Stage 1 — data engine)
+### Implemented (Stage 0 — foundation, Stage 1 — data engine, Stage 2 — design & motion)
 
 - React Native 0.87 (TypeScript, new architecture, Hermes), Android-first
-- Design-token architecture: colors, spacing, typography scale, radii, motion tokens (light + dark themes)
-- Core UI primitives: Text, Screen, Surface, Card, Button, IconButton, Badge, Divider, Stack/Row, EmptyState, LoadingState, toast foundation
-- Navigation shell (React Navigation native stack with placeholder screens)
-- Typed timetable model + the initial weekly timetable as structured local data (all 14 sessions, per-session rooms/instructors, lab and Project/Guide sessions included)
+- Design-token architecture: colors, spacing, typography scale (9 roles), radii, motion, elevation, opacity, z-index, icon sizes — with layered light/dark themes and a working light/dark/system preference
+- Core UI primitives: Text, Screen, Surface, Card, Button (incl. loading state), IconButton, Icon (Lucide), Badge, Chip, Divider, Stack/Row, SectionHeader, EmptyState, ErrorState, LoadingState, Skeleton, ProgressIndicator, toast foundation (tones, action, swipe-to-dismiss)
+- Motion foundation: Reanimated 4 + Gesture Handler, centralized press feedback and entrance primitives, spring tab indicator — reduced-motion aware; haptics behind a centralized fail-safe abstraction
+- Navigation shell: five primary destinations in a compact custom bottom tab bar
+- Design system showcase screen (temporary, dev verification)
 - Timetable query engine: current/next class, upcoming list, day/date/week retrieval, durations and minute math — pure, deterministic, `[start, end)` interval convention, evaluated in `Asia/Kolkata` regardless of device settings
 - Supabase foundation: single client module (env-driven, null-safe when unconfigured), PostgreSQL migrations for profiles/courses/class_sessions/attendance_records/skip_reasons/settings with row-level security on every user-owned table
 - Unit tests (Jest), ESLint, Prettier, type-check wired up

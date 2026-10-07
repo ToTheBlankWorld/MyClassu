@@ -1,25 +1,31 @@
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { CompositeScreenProps } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button, Screen, Stack, Text, useToast } from '../../components';
-import { useTheme } from '../../design';
-import type { RootStackParamList } from '../../navigation/types';
+import { Entrance, useTheme } from '../../design';
+import type {
+  MainTabParamList,
+  RootStackParamList,
+} from '../../navigation/types';
 
-type HomeNavigation = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+type HomeScreenProps = CompositeScreenProps<
+  BottomTabScreenProps<MainTabParamList, 'Home'>,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 /**
- * Stage 0 placeholder shell. The real Home experience ("now / next" class,
- * attendance state) is built in a later stage.
+ * Stage 2 shell. The real Home experience ("now / next" class, attendance
+ * state) is a later stage; this verifies navigation and the design system.
  */
-export function HomeScreen() {
-  const navigation = useNavigation<HomeNavigation>();
+export function HomeScreen({ navigation }: HomeScreenProps) {
   const { showToast } = useToast();
   const { spacing } = useTheme();
 
   return (
     <Screen>
-      <Stack style={{ flex: 1, paddingTop: spacing.xxxl }}>
+      <Entrance style={{ flex: 1, paddingTop: spacing.xxl }}>
         <Text variant="metadata" color="muted">
-          STAGE 0 · FOUNDATION
+          STAGE 2 · APP SHELL
         </Text>
         <Text variant="display" style={{ marginTop: spacing.sm }}>
           MyClassu
@@ -29,16 +35,11 @@ export function HomeScreen() {
           color="secondary"
           style={{ marginTop: spacing.md, maxWidth: 420 }}
         >
-          Your classes, reminders and attendance in one calm place. The
-          foundation is in place — schedule, alarms and attendance arrive stage
-          by stage.
+          Your classes, reminders and attendance in one calm place. The shell is
+          in place — schedule, alarms and attendance arrive stage by stage.
         </Text>
         <Stack gap="lg" style={{ marginTop: spacing.xxl }}>
-          <Button
-            block
-            variant="primary"
-            onPress={() => navigation.navigate('Schedule')}
-          >
+          <Button block onPress={() => navigation.navigate('Schedule')}>
             Open the schedule
           </Button>
           <Button
@@ -50,19 +51,40 @@ export function HomeScreen() {
           </Button>
           <Button
             block
-            variant="ghost"
+            variant="tertiary"
             onPress={() =>
               showToast({
-                message:
-                  'Foundation ready — reminders arrive in a later stage.',
-                tone: 'accent',
+                title: 'Attendance recorded',
+                message: 'This is what a confirmation feels like.',
+                tone: 'success',
               })
             }
           >
-            Preview an in-app notification
+            Preview a confirmation
+          </Button>
+          <Button
+            block
+            variant="tertiary"
+            onPress={() =>
+              showToast({
+                title: 'Unable to sync',
+                message: 'Your data is safe locally — we will retry later.',
+                tone: 'error',
+                action: { label: 'Retry', onPress: () => undefined },
+              })
+            }
+          >
+            Preview an error with action
+          </Button>
+          <Button
+            block
+            variant="tertiary"
+            onPress={() => navigation.navigate('DesignSystem')}
+          >
+            Design system showcase
           </Button>
         </Stack>
-      </Stack>
+      </Entrance>
     </Screen>
   );
 }

@@ -138,7 +138,23 @@ The daily report is planned as: local aggregation of the day's records → a ser
 
 ## 10. Design system
 
-- `src/design/tokens/` — raw palette, spacing, typography scale, radii, motion (durations, easing curves, symbolic spring configs).
-- `src/design/theme.ts` — semantic roles (surface hierarchy, text roles, accent, status colors, borders) mapped to light and dark values.
+- `src/design/tokens/` — raw palette, spacing, typography scale (9 roles), radii, motion (durations, easing curves, spring configs), elevation, opacity, z-index, icon sizes.
+- `src/design/theme.ts` — semantic roles (surface hierarchy, text roles, accent, status colors, borders) mapped to light and dark values. Dark mode is layered (three surface levels + borders), never plain black-on-white.
 - Components consume **only** semantic roles; finalizing the palette later means editing two role maps, not touching components.
-- Motion is a first-class requirement but every animation must justify itself; Reanimated + Gesture Handler arrive in the motion stage, and the spring tokens in `design/tokens/motion.ts` are written for that handoff.
+- **Theme preference** (`system` / `light` / `dark`) lives in `ThemeProvider`; the Settings screen drives it. Persistence arrives with the settings stage.
+- **Icons** are Lucide (`lucide-react-native` + `react-native-svg`) behind a small `Icon` component — one stroke-based visual language, sizes resolved through tokens. Emoji are never used as interface icons.
+
+## 11. Motion & haptics (Stage 2 foundation)
+
+- **Reanimated 4 + Worklets** and **Gesture Handler** are installed and configured (worklets babel plugin last in `babel.config.js`, `GestureHandlerRootView` at the app root, gesture-handler imported first in `index.js`).
+- Motion is centralized in `src/design/motion/`: `usePressScale` (spring scale + opacity press feedback used by every touchable) and `Entrance` (fade + small directional travel for one-shot appearances). All durations/curves/springs come from tokens — no scattered animation values.
+- **Every animation must justify itself** (feedback, hierarchy, continuity, state change). Decorative/infinite motion is excluded by policy; reduced-motion preference collapses entrances to instant appearance and disables press scale.
+- Component-level motion: spring-driven tab indicator, spring toast entrance + swipe-to-dismiss, animated progress fill, calm skeleton pulse.
+- **Haptics** are centralized in `src/design/haptics/haptics.ts` (`light/medium/success/warning/error/selection`) mapping to `react-native-haptic-feedback`; every call fails silently on unsupported devices. UI code never touches the native library.
+- **Testing**: jest maps `react-native-reanimated` to a lightweight local mock (`jest/reanimated-mock.js`) — Reanimated 4's own test mock still boots its native chain under jest. Component tests assert behavior (accessible names, states, callbacks, lifecycle), not animation frames.
+
+## 12. Navigation shell
+
+- Root native stack: `Main` (tab shell) + temporary `DesignSystem` showcase (bottom-slide).
+- Five primary destinations (Home, Schedule, Attendance, Stats, Settings) in a bottom tab navigator with a **custom compact tab bar** (`src/navigation/TabBar.tsx`): slim surface strip, hairline divider, icon + short label, and an accent indicator that springs to the active tab. Tab switches fire a selection haptic and are announced as tabs (`accessibilityRole="tab"`).
+- Screen transitions: platform forward-push for detail screens, bottom-slide for the showcase, instant native switching between primary destinations.

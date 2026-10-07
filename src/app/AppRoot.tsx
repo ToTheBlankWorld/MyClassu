@@ -4,6 +4,7 @@ import {
   DefaultTheme,
   DarkTheme,
 } from '@react-navigation/native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from '../design';
 import { ToastProvider } from '../components';
@@ -42,12 +43,14 @@ function ThemedNavigator() {
 
 export function AppRoot() {
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <ThemedNavigator />
-        </ToastProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <ThemedNavigator />
+          </ToastProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

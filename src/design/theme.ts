@@ -3,6 +3,10 @@ import { spacing, type SpacingToken } from './tokens/spacing';
 import { radius, type RadiusToken } from './tokens/radius';
 import { typography, type TypographyVariant } from './tokens/typography';
 import { duration, easing, spring } from './tokens/motion';
+import { elevation, type ElevationToken } from './tokens/elevation';
+import { opacity, type OpacityToken } from './tokens/opacity';
+import { zIndex, type ZIndexToken } from './tokens/zIndex';
+import { iconSize, type IconSizeToken } from './tokens/iconSize';
 
 /**
  * Semantic theme roles. Components consume ONLY these roles — never raw
@@ -25,6 +29,8 @@ export interface ThemeColors {
   textMuted: string;
   /** Text/icon color on top of accent */
   textOnAccent: string;
+  /** Text/icon color on top of danger fills */
+  textOnDanger: string;
 
   border: string;
   borderStrong: string;
@@ -52,6 +58,10 @@ export interface Theme {
   duration: typeof duration;
   easing: typeof easing;
   spring: typeof spring;
+  elevation: typeof elevation;
+  opacity: typeof opacity;
+  zIndex: typeof zIndex;
+  iconSize: typeof iconSize;
   isDark: boolean;
 }
 
@@ -64,6 +74,7 @@ const lightColors: ThemeColors = {
   textSecondary: palette.gray600,
   textMuted: palette.gray400,
   textOnAccent: palette.white,
+  textOnDanger: palette.white,
   border: palette.gray200,
   borderStrong: palette.gray300,
   accent: palette.teal600,
@@ -87,6 +98,7 @@ const darkColors: ThemeColors = {
   textSecondary: palette.gray400,
   textMuted: palette.gray500,
   textOnAccent: palette.gray950,
+  textOnDanger: palette.white,
   border: palette.gray700,
   borderStrong: palette.gray600,
   accent: palette.teal400,
@@ -109,6 +121,10 @@ export const lightTheme: Theme = {
   duration,
   easing,
   spring,
+  elevation,
+  opacity,
+  zIndex,
+  iconSize,
   isDark: false,
 };
 
@@ -120,7 +136,19 @@ export const darkTheme: Theme = {
   duration,
   easing,
   spring,
+  elevation,
+  opacity,
+  zIndex,
+  iconSize,
   isDark: true,
 };
 
-export type { SpacingToken, RadiusToken, TypographyVariant };
+export type {
+  SpacingToken,
+  RadiusToken,
+  TypographyVariant,
+  ElevationToken,
+  OpacityToken,
+  ZIndexToken,
+  IconSizeToken,
+};

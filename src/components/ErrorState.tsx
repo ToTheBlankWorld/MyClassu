@@ -1,24 +1,30 @@
 import React from 'react';
-import type { LucideIcon } from 'lucide-react-native';
 import { useTheme } from '../design';
+import { CircleAlert } from 'lucide-react-native';
+import { Button } from './Button';
 import { Icon } from './Icon';
 import { Stack } from './Stack';
 import { Text } from './Text';
 
-export interface EmptyStateProps {
-  /** Lucide icon shown in the tinted circle */
-  icon: LucideIcon;
+export interface ErrorStateProps {
   title: string;
   message: string;
-  /** Optional call to action (e.g. a <Button />) */
-  action?: React.ReactNode;
+  /** Provide to show a retry action */
+  onRetry?: () => void;
+  retryLabel?: string;
 }
 
 /**
- * Shared empty-state presentation. Screens own *when* it is shown; this
- * component owns *how* it looks.
+ * Shared error-state presentation: what failed, what it means for the user,
+ * and a way forward. Errors are calm — no giant icons, no alarm colors
+ * beyond the small accent.
  */
-export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
+export function ErrorState({
+  title,
+  message,
+  onRetry,
+  retryLabel = 'Try again',
+}: ErrorStateProps) {
   const { colors, spacing, radius } = useTheme();
 
   return (
@@ -27,15 +33,15 @@ export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
         gap={0}
         align="center"
         style={{
-          width: 68,
-          height: 68,
+          width: 64,
+          height: 64,
           borderRadius: radius.pill,
-          backgroundColor: colors.surfaceSunken,
+          backgroundColor: colors.dangerTint,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Icon glyph={icon} size="lg" color="muted" />
+        <Icon glyph={CircleAlert} size="lg" color="danger" />
       </Stack>
       <Stack gap="sm" align="center">
         <Text variant="title" align="center">
@@ -45,7 +51,11 @@ export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
           {message}
         </Text>
       </Stack>
-      {action}
+      {onRetry ? (
+        <Button variant="secondary" onPress={onRetry}>
+          {retryLabel}
+        </Button>
+      ) : null}
     </Stack>
   );
 }
