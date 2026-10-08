@@ -190,3 +190,63 @@ export function formatDayLabel(date: Date, timeZone: string): string {
     month: 'long',
   }).format(date);
 }
+
+const SHORT_MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+function parseDateKey(dateKey: string): { y: number; m: number; d: number } {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+  if (!match) {
+    throw new Error(`Invalid date key: ${dateKey}`);
+  }
+  const [, y, m, d] = match;
+  const month = Number(m);
+  const day = Number(d);
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    throw new Error(`Invalid date key: ${dateKey}`);
+  }
+  return { y: Number(y), m: month, d: day };
+}
+
+/** Day-of-month number from a "YYYY-MM-DD" key, e.g. 6 for "2026-10-06". */
+export function dayNumberFromDateKey(dateKey: string): number {
+  return parseDateKey(dateKey).d;
+}
+
+/**
+ * Compact "Oct 6" label for a local date key. Pure calendar formatting —
+ * the key is already a wall-clock date, so no timezone is involved.
+ */
+export function formatDateKeyShort(dateKey: string): string {
+  const { m, d } = parseDateKey(dateKey);
+  return `${SHORT_MONTHS[m - 1]} ${d}`;
+}
+
+/** Full weekday name for a local date key, e.g. "Monday". */
+export function formatDateKeyWeekday(dateKey: string): string {
+  const weekday = weekdayFromDateKey(dateKey);
+  return weekday.charAt(0).toUpperCase() + weekday.slice(1);
+}
+
+/**
+ * Week range label for the Monday starting a week, e.g. "Oct 6 – Oct 12".
+ * Always names both ends so cross-month weeks stay unambiguous.
+ */
+export function formatWeekRangeLabel(weekStartKey: string): string {
+  const weekEndKey = addDays(weekStartKey, 6);
+  return `${formatDateKeyShort(weekStartKey)} – ${formatDateKeyShort(
+    weekEndKey,
+  )}`;
+}

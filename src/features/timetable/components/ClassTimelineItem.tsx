@@ -1,23 +1,50 @@
 import React from 'react';
 import { View } from 'react-native';
 import { MapPin, User } from 'lucide-react-native';
+import type { ScheduleStatus } from '../../../domain/models';
 import { useTheme } from '../../../design';
 import { Icon } from '../../../components/Icon';
+import { ProgressIndicator } from '../../../components/ProgressIndicator';
 import { Row, Stack } from '../../../components/Stack';
 import { Surface } from '../../../components/Surface';
 import { Text } from '../../../components/Text';
-import type { DashboardTimelineEntry } from '../dashboard';
+
+/**
+ * Structural timeline entry. Both the Home dashboard entries and the
+ * Schedule day entries satisfy this shape, so one component renders both
+ * timelines with identical visual language.
+ */
+export interface TimelineEntryLike {
+  courseCode: string;
+  courseTitle: string;
+  room?: string;
+  instructor?: string;
+  startTimeLabel: string;
+  endTimeLabel: string;
+  status: ScheduleStatus;
+}
 
 export interface ClassTimelineItemProps {
-  entry: DashboardTimelineEntry;
+  entry: TimelineEntryLike;
+  /** e.g. "50 min" — shown after the course code when provided */
+  durationLabel?: string;
+  /** 0..1 — renders a slim progress bar when provided (running class) */
+  progress?: number | null;
+  /** Overrides the default TalkBack summary when provided */
+  accessibilityLabel?: string;
 }
 
 /**
- * One row of the Today timeline. Visual weight encodes state: the running
- * class gets a tinted active treatment with a NOW badge, upcoming classes
- * stay clear, completed classes go quiet.
+ * One row of a class timeline. Visual weight encodes state: the running
+ * class gets a tinted active treatment, upcoming classes stay clear,
+ * completed classes go quiet.
  */
-export function ClassTimelineItem({ entry }: ClassTimelineItemProps) {
+export function ClassTimelineItem({
+  entry,
+  durationLabel,
+  progress,
+  accessibilityLabel,
+}: ClassTimelineItemProps) {
   const { colors, spacing, radius } = useTheme();
   const isCurrent = entry.status === 'current';
   const isCompleted = entry.status === 'completed';
@@ -25,6 +52,7 @@ export function ClassTimelineItem({ entry }: ClassTimelineItemProps) {
   const titleColor = isCompleted ? 'muted' : 'primary';
   const metaColor = isCompleted ? 'muted' : 'secondary';
   const timeColor = isCurrent ? 'accent' : isCompleted ? 'muted' : 'secondary';
+  const label = accessibilityLabel ?? accessibilitySummary(entry);
 
   const row = (
     <Row gap="md" align="stretch">
@@ -44,6 +72,11 @@ export function ClassTimelineItem({ entry }: ClassTimelineItemProps) {
           <Text variant="caption" color={metaColor}>
             {entry.courseCode}
           </Text>
+          {durationLabel ? (
+            <Text variant="caption" color={metaColor}>
+              {`· ${durationLabel}`}
+            </Text>
+          ) : null}
           {entry.room ? (
             <Row gap={4} align="center">
               <Icon glyph={MapPin} size="xs" color={metaColor} />
@@ -61,6 +94,13 @@ export function ClassTimelineItem({ entry }: ClassTimelineItemProps) {
             </Row>
           ) : null}
         </Row>
+        {progress != null ? (
+          <ProgressIndicator
+            value={progress}
+            accessibilityLabel="Progress through the class"
+            style={{ marginTop: spacing.sm, alignSelf: 'stretch' }}
+          />
+        ) : null}
       </Stack>
       {isCurrent ? (
         <View
@@ -85,7 +125,7 @@ export function ClassTimelineItem({ entry }: ClassTimelineItemProps) {
           borderRadius: radius.lg,
           padding: spacing.lg,
         }}
-        accessibilityLabel={accessibilitySummary(entry)}
+        accessibilityLabel={label}
       >
         {row}
       </Surface>
@@ -95,14 +135,14 @@ export function ClassTimelineItem({ entry }: ClassTimelineItemProps) {
   return (
     <View
       style={{ paddingVertical: spacing.xs, opacity: isCompleted ? 0.55 : 1 }}
-      accessibilityLabel={accessibilitySummary(entry)}
+      accessibilityLabel={label}
     >
       {row}
     </View>
   );
 }
 
-function accessibilitySummary(entry: DashboardTimelineEntry): string {
+function accessibilitySummary(entry: TimelineEntryLike): string {
   const state =
     entry.status === 'current'
       ? 'Happening now'
