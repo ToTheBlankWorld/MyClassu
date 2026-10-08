@@ -10,6 +10,7 @@ import {
   SectionHeader,
   Stack,
   Text,
+  useToast,
 } from '../../components';
 import { useTheme, useThemePreference } from '../../design';
 import type {
@@ -54,8 +55,8 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
             ))}
           </Row>
           <Text variant="caption" color="muted">
-            Light and dark are carefully layered — dark mode is not simply black
-            and white.
+            Light and dark are carefully layered �?" dark mode is not simply
+            black and white.
           </Text>
         </Stack>
         <Stack gap="lg" style={{ marginTop: spacing.xxl }}>
@@ -66,8 +67,84 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           >
             Design system showcase
           </Button>
+          {__DEV__ ? <DeveloperReminderTools /> : null}
         </Stack>
       </Stack>
     </Screen>
+  );
+}
+
+/**
+ * Development-only reminder verification tools. Rendered exclusively in
+ * __DEV__ bundles (stripped from release) and backed by debug-guarded
+ * native methods (refused in release builds). Never a user-facing feature.
+ */
+function DeveloperReminderTools() {
+  const { showToast } = useToast();
+
+  const scheduleTest = async () => {
+    try {
+      const { scheduleTestReminder } = await import(
+        '../../features/reminders/reminderBridge'
+      );
+      const result = await scheduleTestReminder(
+        'Advanced Computer Networks',
+        'Starts in 5 minutes',
+        30,
+      );
+      showToast({
+        title: result.scheduled
+          ? 'Test reminder armed'
+          : 'Test reminder failed',
+        message: result.scheduled
+          ? 'Fires in ~30 seconds — you can close the app.'
+          : 'Check logcat for the native cause.',
+        tone: result.scheduled ? 'success' : 'error',
+      });
+    } catch {
+      showToast({
+        title: 'Test reminder unavailable',
+        message: 'The native reminder module is missing on this build.',
+        tone: 'error',
+      });
+    }
+  };
+
+  const cancelAll = async () => {
+    try {
+      const { cancelAllReminders, cancelTestReminder } = await import(
+        '../../features/reminders/reminderBridge'
+      );
+      const result = await cancelAllReminders();
+      // The one-shot test alarm uses a different action identity, so it is
+      // not part of the class set — cancel it explicitly. Debug-only API.
+      try {
+        await cancelTestReminder();
+      } catch {
+        // Test-alarm cleanup is best effort.
+      }
+      showToast({
+        title: 'Reminders cancelled',
+        message: `${result.cancelled} pending reminder(s) removed.`,
+        tone: 'success',
+      });
+    } catch {
+      showToast({
+        title: 'Cancellation unavailable',
+        message: 'The native reminder module is missing on this build.',
+        tone: 'error',
+      });
+    }
+  };
+
+  return (
+    <>
+      <Button variant="tertiary" onPress={scheduleTest}>
+        Schedule test reminder (30 s)
+      </Button>
+      <Button variant="tertiary" onPress={cancelAll}>
+        Cancel all reminders
+      </Button>
+    </>
   );
 }

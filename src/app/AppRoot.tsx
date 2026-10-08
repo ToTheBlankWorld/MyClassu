@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from '../design';
 import { ToastProvider } from '../components';
+import { useClassReminders } from '../features/reminders/useClassReminders';
 import { RootNavigator } from '../navigation/RootNavigator';
 
 /**
@@ -17,6 +18,8 @@ import { RootNavigator } from '../navigation/RootNavigator';
 
 function ThemedNavigator() {
   const theme = useTheme();
+  // Native class-reminder sync: idempotent, offline-first, never blocks UI.
+  useClassReminders();
 
   const navigationTheme = {
     ...(theme.isDark ? DarkTheme : DefaultTheme),
