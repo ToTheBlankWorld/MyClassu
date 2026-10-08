@@ -1,90 +1,17 @@
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import type { CompositeScreenProps } from '@react-navigation/native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Button, Screen, Stack, Text, useToast } from '../../components';
-import { Entrance, useTheme } from '../../design';
-import type {
-  MainTabParamList,
-  RootStackParamList,
-} from '../../navigation/types';
-
-type HomeScreenProps = CompositeScreenProps<
-  BottomTabScreenProps<MainTabParamList, 'Home'>,
-  NativeStackScreenProps<RootStackParamList>
->;
+import { HomeView } from './HomeView';
+import { useNow } from '../../hooks/useNow';
+import { useHomeDashboard } from '../../features/timetable/useHomeDashboard';
 
 /**
- * Stage 2 shell. The real Home experience ("now / next" class, attendance
- * state) is a later stage; this verifies navigation and the design system.
+ * The MyClassu Home dashboard: what day is it, what is happening now, what is
+ * next, and how the day looks. Data comes exclusively from the timetable
+ * engine through the dashboard selector; `useNow` provides a coarse live
+ * clock (30s tick + foreground refresh) so countdowns stay honest without a
+ * per-second render loop.
  */
-export function HomeScreen({ navigation }: HomeScreenProps) {
-  const { showToast } = useToast();
-  const { spacing } = useTheme();
+export function HomeScreen() {
+  const now = useNow();
+  const { status, dashboard, retry } = useHomeDashboard(now);
 
-  return (
-    <Screen>
-      <Entrance style={{ flex: 1, paddingTop: spacing.xxl }}>
-        <Text variant="metadata" color="muted">
-          STAGE 2 · APP SHELL
-        </Text>
-        <Text variant="display" style={{ marginTop: spacing.sm }}>
-          MyClassu
-        </Text>
-        <Text
-          variant="body"
-          color="secondary"
-          style={{ marginTop: spacing.md, maxWidth: 420 }}
-        >
-          Your classes, reminders and attendance in one calm place. The shell is
-          in place — schedule, alarms and attendance arrive stage by stage.
-        </Text>
-        <Stack gap="lg" style={{ marginTop: spacing.xxl }}>
-          <Button block onPress={() => navigation.navigate('Schedule')}>
-            Open the schedule
-          </Button>
-          <Button
-            block
-            variant="secondary"
-            onPress={() => navigation.navigate('Settings')}
-          >
-            Settings
-          </Button>
-          <Button
-            block
-            variant="tertiary"
-            onPress={() =>
-              showToast({
-                title: 'Attendance recorded',
-                message: 'This is what a confirmation feels like.',
-                tone: 'success',
-              })
-            }
-          >
-            Preview a confirmation
-          </Button>
-          <Button
-            block
-            variant="tertiary"
-            onPress={() =>
-              showToast({
-                title: 'Unable to sync',
-                message: 'Your data is safe locally — we will retry later.',
-                tone: 'error',
-                action: { label: 'Retry', onPress: () => undefined },
-              })
-            }
-          >
-            Preview an error with action
-          </Button>
-          <Button
-            block
-            variant="tertiary"
-            onPress={() => navigation.navigate('DesignSystem')}
-          >
-            Design system showcase
-          </Button>
-        </Stack>
-      </Entrance>
-    </Screen>
-  );
+  return <HomeView status={status} dashboard={dashboard} onRetry={retry} />;
 }

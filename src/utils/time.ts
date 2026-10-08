@@ -151,3 +151,42 @@ const WEEKDAY_NAMES: Weekday[] = [
   'saturday',
   'sunday',
 ];
+
+/** Format minutes-since-midnight as a 12-hour clock label, e.g. "2:00 PM". */
+export function formatTime12h(minutes: number): string {
+  if (!Number.isInteger(minutes) || minutes < 0 || minutes > 24 * 60 - 1) {
+    throw new Error(`Invalid minutes of day: ${minutes}`);
+  }
+  const hours24 = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  const suffix = hours24 < 12 ? 'AM' : 'PM';
+  let hours12 = hours24 % 12;
+  if (hours12 === 0) {
+    hours12 = 12;
+  }
+  return `${hours12}:${String(mins).padStart(2, '0')} ${suffix}`;
+}
+
+/** Human duration, e.g. "42 min" or "1 h 5 min". */
+export function formatDuration(minutes: number): string {
+  const rounded = Math.max(0, Math.round(minutes));
+  const hours = Math.floor(rounded / 60);
+  const mins = rounded % 60;
+  if (hours === 0) {
+    return `${mins} min`;
+  }
+  return mins === 0 ? `${hours} h` : `${hours} h ${mins} min`;
+}
+
+/**
+ * Full weekday/date label in a timezone, e.g. "Monday, 5 October".
+ * Uses Intl so the wall-clock date matches the timetable's zone.
+ */
+export function formatDayLabel(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-IN', {
+    timeZone,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(date);
+}
