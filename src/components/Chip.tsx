@@ -36,6 +36,7 @@ export function Chip({
   onPressIn,
   onPressOut,
   onPress,
+  accessibilityLabel,
   ...rest
 }: ChipProps) {
   const { colors, spacing, radius, opacity: opacityToken } = useTheme();
@@ -53,7 +54,7 @@ export function Chip({
       {...rest}
       accessibilityRole="button"
       accessibilityState={{ selected, disabled: !!disabled }}
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       disabled={disabled}
       onPress={event => {
         if (hapticEnabled) {

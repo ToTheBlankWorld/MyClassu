@@ -1,23 +1,13 @@
-import { ClipboardCheck } from 'lucide-react-native';
-import { EmptyState, Screen, Stack, Text } from '../../components';
-import { useTheme } from '../../design';
+import { AttendanceView } from './AttendanceView';
+import { useAttendanceRecords } from '../../features/attendance/useAttendanceRecords';
 
-/** Stage 2 placeholder. Attendance marking arrives in a later stage. */
+/**
+ * Attendance destination: overview summary plus filterable history, read
+ * from the authoritative native store (refreshed on every focus so alarm
+ * decisions appear immediately).
+ */
 export function AttendanceScreen() {
-  const { spacing } = useTheme();
+  const { status, records, retry } = useAttendanceRecords();
 
-  return (
-    <Screen>
-      <Stack style={{ flex: 1, paddingTop: spacing.xl }}>
-        <Text variant="heading">Attendance</Text>
-        <Stack gap={0} style={{ flex: 1, justifyContent: 'center' }}>
-          <EmptyState
-            icon={ClipboardCheck}
-            title="Attendance tracking is on its way"
-            message="One-tap attendance with skip reasons arrives in an upcoming stage."
-          />
-        </Stack>
-      </Stack>
-    </Screen>
-  );
+  return <AttendanceView status={status} records={records} onRetry={retry} />;
 }

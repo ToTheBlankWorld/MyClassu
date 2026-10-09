@@ -1,23 +1,12 @@
-import { ChartColumn } from 'lucide-react-native';
-import { EmptyState, Screen, Stack, Text } from '../../components';
-import { useTheme } from '../../design';
+import { StatsView } from './StatsView';
+import { useAttendanceRecords } from '../../features/attendance/useAttendanceRecords';
 
-/** Stage 2 placeholder. Attendance analytics arrive in a later stage. */
+/**
+ * Statistics destination: subject breakdown, reason insights, and weekly
+ * trend — all computed from the authoritative native attendance store.
+ */
 export function StatisticsScreen() {
-  const { spacing } = useTheme();
+  const { status, records, retry } = useAttendanceRecords();
 
-  return (
-    <Screen>
-      <Stack style={{ flex: 1, paddingTop: spacing.xl }}>
-        <Text variant="heading">Stats</Text>
-        <Stack gap={0} style={{ flex: 1, justifyContent: 'center' }}>
-          <EmptyState
-            icon={ChartColumn}
-            title="Statistics are on their way"
-            message="Daily, weekly and course-level insights arrive once attendance data exists."
-          />
-        </Stack>
-      </Stack>
-    </Screen>
-  );
+  return <StatsView status={status} records={records} onRetry={retry} />;
 }

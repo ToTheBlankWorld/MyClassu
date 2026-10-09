@@ -114,17 +114,33 @@ The PostgreSQL side lives in `supabase/migrations/` as plain, ordered SQL files 
 
 **Secrets policy:** the publishable key is client-safe; the PostgreSQL password, the service-role key and any AgentMail API key are server-only and must never enter the app, `.env.example`, or Git.
 
-## 7. Attendance model (schema foundation exists, implementation later)
+## 7. Attendance model (Stages 7–8 implemented)
 
 ```
-AttendanceRecord: id, classSessionId, date (YYYY-MM-DD local),
-                  status: attended | skipped | pending | unconfirmed,
-                  reasonCategory?, reasonText?, markedAt (ISO instant)
+Local record:  id "<sessionId>|<dateKey>", sessionId, dateKey (YYYY-MM-DD
+               Asia/Kolkata), courseCode, subject snapshot, class start/end
+               millis, status attended | skipped, reasonCategory?,
+               reasonText?, markedAt/updatedAt millis, synced flag
+Cloud record:  attendance_records row (same columns + user_id), unique
+               (class_session_id, date); SkipReasonCategory mirrors the
+               shared skip_reasons defaults
 ```
 
-- One record per session occurrence; creating/updating is idempotent per (classSessionId, date) — enforced by a UNIQUE constraint in the cloud schema.
-- Skip reasons are structured (`SkipReasonCategory` + a `skip_reasons` vocabulary table with shared defaults and personal rows), so skip-reason analytics are queries over data, not string parsing.
-- Daily/weekly/course-level statistics and the 6:00 PM report are derived views over these records.
+- One record per session occurrence, locally and in the cloud. Local
+  writes are upserts by stable ID (last write wins, never duplicates);
+  uploads use upsert on the established unique key.
+- Skip reasons are structured (`SkipReasonCategory` + shared defaults),
+  so reason analytics are aggregations, never string parsing or inference.
+- Analytics semantics (`src/features/attendance/analytics.ts`): only
+  decided records count; upcoming classes are never in any denominator;
+  percentage = attended / decided (null when undecided — never NaN);
+  subjects group by course code; history filters all/attended/missed;
+  trends use Monday-first weeks on record dateKeys with engine-provided
+  scheduled counts; no projections are shown (they would mislead).
+- Sync is an offline outbox (`attendanceSync`): local-first save, upload
+  only with client + session + server session mapping, per-record retry.
+  Local session IDs have no server uuids yet, so uploads defer as
+  `unmapped` — documented, not attempted.
 
 ## 8. Future backend / email architecture
 
