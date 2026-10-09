@@ -38,9 +38,17 @@ class ClassReminderModule(
             dateKey = map.getString("dateKey").orEmpty(),
             sessionId = map.getString("sessionId").orEmpty(),
             subject = map.getString("subject").orEmpty(),
+            courseCode = map.getString("courseCode").orEmpty(),
             startMinutes = if (map.hasKey("startMinutes")) map.getInt("startMinutes") else -1,
+            endMinutes = if (map.hasKey("endMinutes")) {
+              map.getInt("endMinutes")
+            } else {
+              -1
+            },
             startLabel = map.getString("startLabel").orEmpty(),
+            endLabel = map.getString("endLabel").orEmpty(),
             room = map.getString("room"),
+            instructor = map.getString("instructor"),
           )
         }
       }
@@ -57,7 +65,37 @@ class ClassReminderModule(
     }
   }
 
-  /** Cancel every reminder this app owns. Resolves { cancelled }. */
+  /** Cancel only 5-minute reminders; class-start alarms are untouched. */
+  @ReactMethod
+  fun cancelReminderAlarms(promise: Promise) {
+    try {
+      val cancelled = ClassReminderScheduler.cancelReminders(reactApplicationContext)
+      promise.resolve(
+        Arguments.createMap().apply {
+          putInt("cancelled", cancelled)
+        },
+      )
+    } catch (e: Exception) {
+      promise.reject("CANCEL_FAILED", e.message, e)
+    }
+  }
+
+  /** Cancel only class-start alarms; 5-minute reminders are untouched. */
+  @ReactMethod
+  fun cancelClassStartAlarms(promise: Promise) {
+    try {
+      val cancelled = ClassReminderScheduler.cancelClassStarts(reactApplicationContext)
+      promise.resolve(
+        Arguments.createMap().apply {
+          putInt("cancelled", cancelled)
+        },
+      )
+    } catch (e: Exception) {
+      promise.reject("CANCEL_FAILED", e.message, e)
+    }
+  }
+
+  /** Cancel every reminder AND class-start alarm this app owns. */
   @ReactMethod
   fun cancelAllReminders(promise: Promise) {
     try {
@@ -139,6 +177,58 @@ class ClassReminderModule(
     }
     try {
       ClassReminderScheduler.cancelTest(reactApplicationContext)
+      promise.resolve(true)
+    } catch (e: Exception) {
+      promise.reject("TEST_CANCEL_FAILED", e.message, e)
+    }
+  }
+
+  /**
+   * DEVELOPMENT ONLY: fire a one-shot test class-start alarm (real
+   * production path: AlarmManager → receiver → full-screen intent →
+   * alarm Activity) after [inSeconds]. Refused in release builds. Never
+   * persisted, so a reboot cannot resurrect test alarms.
+   */
+  @ReactMethod
+  fun scheduleTestClassStart(
+    subject: String?,
+    courseCode: String?,
+    inSeconds: Int,
+    promise: Promise,
+  ) {
+    if (!BuildConfig.DEBUG) {
+      promise.reject("NOT_ALLOWED", "Test alarms are debug-only.")
+      return
+    }
+    try {
+      val seconds = inSeconds.coerceIn(1, 3600)
+      val triggerAt = System.currentTimeMillis() + seconds * 1000L
+      val armed = ClassReminderScheduler.scheduleTestClassStart(
+        reactApplicationContext,
+        triggerAt,
+        subject.orEmpty().ifBlank { "Advanced Computer Networks" },
+        courseCode.orEmpty().ifBlank { "CSEN3141" },
+      )
+      promise.resolve(
+        Arguments.createMap().apply {
+          putBoolean("scheduled", armed)
+          putDouble("triggerAt", triggerAt.toDouble())
+        },
+      )
+    } catch (e: Exception) {
+      promise.reject("TEST_SCHEDULE_FAILED", e.message, e)
+    }
+  }
+
+  /** Cancel the development test class-start alarm, if any. Debug only. */
+  @ReactMethod
+  fun cancelTestClassStart(promise: Promise) {
+    if (!BuildConfig.DEBUG) {
+      promise.reject("NOT_ALLOWED", "Test alarms are debug-only.")
+      return
+    }
+    try {
+      ClassReminderScheduler.cancelTestClassStart(reactApplicationContext)
       promise.resolve(true)
     } catch (e: Exception) {
       promise.reject("TEST_CANCEL_FAILED", e.message, e)

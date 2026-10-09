@@ -31,10 +31,119 @@ class ClassReminderReceiver : BroadcastReceiver() {
       ReminderContract.ACTION_SHOW_REMINDER,
       ReminderContract.ACTION_SHOW_TEST_REMINDER,
       -> showReminder(context, intent)
+      ReminderContract.ACTION_SHOW_CLASS_START,
+      ReminderContract.ACTION_SHOW_TEST_CLASS_START,
+      -> showClassStart(context, intent)
       Intent.ACTION_BOOT_COMPLETED,
       Intent.ACTION_TIMEZONE_CHANGED,
       Intent.ACTION_TIME_CHANGED,
       -> ClassReminderScheduler.rescheduleAfterSystemEvent(context)
+    }
+  }
+
+  /**
+   * Class-start alarm fired. Posts the dedicated alarm notification with a
+   * full-screen intent (the proper Android mechanism — never a direct
+   * startActivity from the receiver) and forgets the occurrence so it can
+   * never double-fire. The alarm Activity owns sound/vibration/dismissal.
+   */
+  private fun showClassStart(context: Context, intent: Intent) {
+    val isTest = intent.getBooleanExtra(ReminderContract.EXTRA_IS_TEST, false) ||
+      intent.action == ReminderContract.ACTION_SHOW_TEST_CLASS_START
+    val subject = intent.getStringExtra(ReminderContract.EXTRA_SUBJECT).orEmpty()
+    if (subject.isBlank()) {
+      return
+    }
+    val stableId = intent.getStringExtra(ReminderContract.EXTRA_STABLE_ID)
+      ?: return
+
+    ReminderNotifications.ensureChannels(context)
+
+    val alarmIntent = Intent(context, ClassAlarmActivity::class.java).apply {
+      flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+      putExtra(ReminderContract.EXTRA_STABLE_ID, stableId)
+      putExtra(ReminderContract.EXTRA_SUBJECT, subject)
+      putExtra(
+        ReminderContract.EXTRA_COURSE_CODE,
+        intent.getStringExtra(ReminderContract.EXTRA_COURSE_CODE).orEmpty(),
+      )
+      putExtra(
+        ReminderContract.EXTRA_START_LABEL,
+        intent.getStringExtra(ReminderContract.EXTRA_START_LABEL).orEmpty(),
+      )
+      putExtra(
+        ReminderContract.EXTRA_END_LABEL,
+        intent.getStringExtra(ReminderContract.EXTRA_END_LABEL).orEmpty(),
+      )
+      putExtra(ReminderContract.EXTRA_ROOM, intent.getStringExtra(ReminderContract.EXTRA_ROOM))
+      putExtra(
+        ReminderContract.EXTRA_INSTRUCTOR,
+        intent.getStringExtra(ReminderContract.EXTRA_INSTRUCTOR),
+      )
+      putExtra(
+        ReminderContract.EXTRA_DATE_KEY,
+        intent.getStringExtra(ReminderContract.EXTRA_DATE_KEY),
+      )
+      putExtra(
+        ReminderContract.EXTRA_SESSION_ID,
+        intent.getStringExtra(ReminderContract.EXTRA_SESSION_ID),
+      )
+      putExtra(ReminderContract.EXTRA_IS_TEST, isTest)
+    }
+    val fullScreen = try {
+      PendingIntent.getActivity(
+        context,
+        ReminderContract.requestCode(stableId),
+        alarmIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+      )
+    } catch (e: IllegalArgumentException) {
+      return
+    }
+
+    val title = if (isTest) "Test: $subject" else subject
+    val room = intent.getStringExtra(ReminderContract.EXTRA_ROOM)
+      .takeUnless { it.isNullOrBlank() || it == "null" }
+    val body = if (isTest) {
+      "Class-start alarm test"
+    } else {
+      ReminderContract.classStartBody(
+        intent.getStringExtra(ReminderContract.EXTRA_START_LABEL).orEmpty(),
+        intent.getStringExtra(ReminderContract.EXTRA_END_LABEL).orEmpty(),
+        room,
+        intent.getStringExtra(ReminderContract.EXTRA_INSTRUCTOR),
+      )
+    }
+
+    val notification = NotificationCompat.Builder(context, ReminderContract.ALARM_CHANNEL_ID)
+      .setSmallIcon(R.drawable.ic_class_reminder)
+      .setContentTitle(title)
+      .setContentText(body)
+      .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+      .setPriority(NotificationCompat.PRIORITY_MAX)
+      .setCategory(NotificationCompat.CATEGORY_ALARM)
+      // No sound/vibration here: the alarm Activity owns both, so they
+      // start and stop together with acknowledgement. The notification is
+      // the persistent, ongoing entry point to that screen.
+      .setSound(null)
+      .setVibrate(longArrayOf())
+      .setOngoing(true)
+      .setAutoCancel(false)
+      .setContentIntent(fullScreen)
+      .setFullScreenIntent(fullScreen, true)
+      .build()
+
+    val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+    try {
+      manager?.notify(ReminderContract.requestCode(stableId), notification)
+    } catch (e: SecurityException) {
+      // Notifications revoked mid-flight: drop it, never crash the receiver.
+      return
+    }
+
+    // Delivered: forget the occurrence so a later resync cannot re-fire it.
+    if (!isTest) {
+      ClassReminderScheduler.forgetDelivered(context, stableId)
     }
   }
 

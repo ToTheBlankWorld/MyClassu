@@ -29,6 +29,8 @@ export interface ClassReminderPayload {
   endMinutes: number;
   /** e.g. "2:00 PM" */
   startLabel: string;
+  /** e.g. "2:50 PM" — shown on the class-start alarm. */
+  endLabel: string;
   /** Omitted when the session has no room (never "null"/"undefined"). */
   room?: string;
   instructor?: string;
@@ -135,6 +137,7 @@ export function buildReminderPayloads(
         startMinutes: occurrence.startMinutes,
         endMinutes: occurrence.endMinutes,
         startLabel: formatTime12h(occurrence.startMinutes),
+        endLabel: formatTime12h(occurrence.endMinutes),
         ...(room ? { room } : {}),
         ...(instructor ? { instructor } : {}),
         classStart,

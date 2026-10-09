@@ -25,20 +25,40 @@ object ReminderContract {
   /** Stable alarm identity: "<dateKey>|<sessionId>|reminder-5min". */
   const val REMINDER_KIND = "reminder-5min"
 
+  /**
+   * Stable alarm identity: "<dateKey>|<sessionId>|class-start".
+   * A different kind suffix from the reminder, so the two PendingIntents
+   * (and notification IDs) for one occurrence can never collide.
+   */
+  const val CLASS_START_KIND = "class-start"
+
   /** AlarmReceiver action for a class reminder firing. */
   const val ACTION_SHOW_REMINDER = "com.myclassu.reminders.SHOW_REMINDER"
+
+  /** AlarmReceiver action for a class-start alarm firing. */
+  const val ACTION_SHOW_CLASS_START = "com.myclassu.reminders.SHOW_CLASS_START"
 
   /** AlarmReceiver action for a development-only test reminder firing. */
   const val ACTION_SHOW_TEST_REMINDER = "com.myclassu.reminders.SHOW_TEST_REMINDER"
 
+  /** AlarmReceiver action for a development-only test class-start firing. */
+  const val ACTION_SHOW_TEST_CLASS_START = "com.myclassu.reminders.SHOW_TEST_CLASS_START"
+
   const val CHANNEL_ID = "myclassu_class_reminders"
+
+  /** Dedicated channel for the class-start alarm (sound/vibration/FSI). */
+  const val ALARM_CHANNEL_ID = "myclassu_class_alerts"
 
   const val EXTRA_STABLE_ID = "extra_stable_id"
   const val EXTRA_SUBJECT = "extra_subject"
+  const val EXTRA_COURSE_CODE = "extra_course_code"
   const val EXTRA_START_LABEL = "extra_start_label"
+  const val EXTRA_END_LABEL = "extra_end_label"
   const val EXTRA_ROOM = "extra_room"
+  const val EXTRA_INSTRUCTOR = "extra_instructor"
   const val EXTRA_DATE_KEY = "extra_date_key"
   const val EXTRA_SESSION_ID = "extra_session_id"
+  const val EXTRA_KIND = "extra_kind"
   const val EXTRA_IS_TEST = "extra_is_test"
 
   private val DATE_KEY_PATTERN = Regex("""^\d{4}-\d{2}-\d{2}$""")
@@ -46,6 +66,10 @@ object ReminderContract {
   /** Deterministic alarm identity from a concrete occurrence. */
   fun stableId(dateKey: String, sessionId: String): String =
     "$dateKey|$sessionId|$REMINDER_KIND"
+
+  /** Deterministic class-start identity — never equal to [stableId]. */
+  fun classStartId(dateKey: String, sessionId: String): String =
+    "$dateKey|$sessionId|$CLASS_START_KIND"
 
   /**
    * Deterministic PendingIntent/notification integer from a stable ID.
@@ -82,6 +106,28 @@ object ReminderContract {
 
   /** Notification title: the subject, nothing else. */
   fun notificationTitle(subject: String): String = subject
+
+  /**
+   * Class-start alarm body. Room/instructor segments are omitted when
+   * missing — never "null".
+   */
+  fun classStartBody(
+    startLabel: String,
+    endLabel: String,
+    room: String?,
+    instructor: String?,
+  ): String {
+    val lines = mutableListOf("It's time for class", "$startLabel – $endLabel")
+    val cleanRoom = room?.trim().takeUnless { it.isNullOrEmpty() || it == "null" }
+    if (cleanRoom != null) {
+      lines += cleanRoom
+    }
+    val cleanInstructor = instructor?.trim().takeUnless { it.isNullOrEmpty() || it == "null" }
+    if (cleanInstructor != null) {
+      lines += cleanInstructor
+    }
+    return lines.joinToString("\n")
+  }
 
   /**
    * Notification body. Never renders "null"/"undefined": a missing or blank

@@ -64,6 +64,27 @@ describe('buildReminderPayloads — five-minute offset', () => {
     expect(first.room).toBe('ICT / 331');
   });
 
+  it('carries the display fields the class-start alarm needs', () => {
+    const payloads = buildReminderPayloads(ist(5, 8, 0), service, {
+      horizonOffsetsDays: [],
+    });
+    const acn = payloads.find(p => p.courseCode === 'CSEN3141');
+    if (acn === undefined) {
+      throw new Error('Expected an ACN reminder payload');
+    }
+    // One payload arms both the reminder and the class-start alarm.
+    expect(acn.startLabel).toBe('2:00 PM');
+    expect(acn.endLabel).toBe('2:50 PM');
+    expect(acn.classStart).toBe(Date.UTC(2026, 9, 5, 8, 30));
+    expect(acn.classEnd - acn.classStart).toBe(50 * 60_000);
+    expect(acn.instructor).toBe('Tadi Srinivas');
+    // Reminder vs class-start identities for this occurrence differ.
+    const reminderId = `${acn.dateKey}|${acn.sessionId}|reminder-5min`;
+    const alarmId = `${acn.dateKey}|${acn.sessionId}|class-start`;
+    expect(acn.id).toBe(reminderId);
+    expect(reminderId).not.toBe(alarmId);
+  });
+
   it('uses deterministic duplicate-proof identifiers', () => {
     const first = buildReminderPayloads(ist(5, 8, 0), service);
     const second = buildReminderPayloads(ist(5, 8, 0), service);

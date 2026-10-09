@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Class-start alarm screen. Fixed dark treatment (alarms must render
+  identically with the app dead, so no theme bridge): warm near-black,
+  lagoon-teal accent, generous type scale. Mirrors the app's visual
+  hierarchy: overline → subject → code → time → room → faculty → action.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121110"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingLeft="32dp"
+        android:paddingRight="32dp"
+        android:paddingTop="72dp"
+        android:paddingBottom="48dp">
+
+        <TextView
+            android:id="@+id/alarm_test_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/alarm_test_badge"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="TEST ALARM"
+            android:textColor="#6FC7BC"
+            android:textSize="12sp"
+            android:letterSpacing="0.12"
+            android:visibility="gone" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CLASS STARTING"
+            android:textColor="#A19A8F"
+            android:textSize="13sp"
+            android:letterSpacing="0.18" />
+
+        <TextView
+            android:id="@+id/alarm_subject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center_horizontal"
+            android:textColor="#FFFFFF"
+            android:textSize="30sp"
+            android:lineSpacingExtra="4dp" />
+
+        <TextView
+            android:id="@+id/alarm_course_code"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_horizontal"
+            android:textColor="#45AFA2"
+            android:textSize="17sp"
+            android:letterSpacing="0.06" />
+
+        <TextView
+            android:id="@+id/alarm_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:gravity="center_horizontal"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/alarm_room"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_horizontal"
+            android:textColor="#A19A8F"
+            android:textSize="17sp" />
+
+        <TextView
+            android:id="@+id/alarm_instructor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_horizontal"
+            android:textColor="#A19A8F"
+            android:textSize="17sp" />
+
+        <Button
+            android:id="@+id/alarm_dismiss"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="56dp"
+            android:minHeight="56dp"
+            android:backgroundTint="#45AFA2"
+            android:text="Dismiss"
+            android:textAllCaps="false"
+            android:textColor="#121110"
+            android:textSize="17sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_horizontal"
+            android:text="Marking attendance happens in the app"
+            android:textColor="#5C564E"
+            android:textSize="13sp" />
+
+    </LinearLayout>
+</ScrollView>

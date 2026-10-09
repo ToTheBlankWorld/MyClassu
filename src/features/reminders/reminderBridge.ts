@@ -27,6 +27,8 @@ interface NativeTestResult {
 interface ClassReminderNative {
   scheduleReminders(reminders: unknown[]): Promise<NativeScheduleResult>;
   cancelAllReminders(): Promise<NativeCancelResult>;
+  cancelReminderAlarms(): Promise<NativeCancelResult>;
+  cancelClassStartAlarms(): Promise<NativeCancelResult>;
   getScheduledReminders(): Promise<string[]>;
   canScheduleExactAlarms(): Promise<boolean>;
   scheduleTestReminder(
@@ -35,6 +37,12 @@ interface ClassReminderNative {
     inSeconds: number,
   ): Promise<NativeTestResult>;
   cancelTestReminder(): Promise<boolean>;
+  scheduleTestClassStart(
+    subject: string,
+    courseCode: string,
+    inSeconds: number,
+  ): Promise<NativeTestResult>;
+  cancelTestClassStart(): Promise<boolean>;
 }
 
 const native = NativeModules.ClassReminder as ClassReminderNative | undefined;
@@ -53,16 +61,30 @@ export async function scheduleReminders(
   if (!native) {
     throw unavailable();
   }
+  // One payload arms both the 5-minute reminder and the class-start
+  // alarm natively (distinct deterministic IDs — never colliding).
   return native.scheduleReminders(
     payloads.map(payload => ({
       dateKey: payload.dateKey,
       sessionId: payload.sessionId,
       subject: payload.subject,
+      courseCode: payload.courseCode,
       startMinutes: payload.startMinutes,
+      endMinutes: payload.endMinutes,
       startLabel: payload.startLabel,
+      endLabel: payload.endLabel,
       ...(payload.room ? { room: payload.room } : {}),
+      ...(payload.instructor ? { instructor: payload.instructor } : {}),
     })),
   );
+}
+
+/** Cancel only class-start alarms; reminders are untouched. */
+export async function cancelClassStartAlarms(): Promise<NativeCancelResult> {
+  if (!native) {
+    throw unavailable();
+  }
+  return native.cancelClassStartAlarms();
 }
 
 export async function cancelAllReminders(): Promise<NativeCancelResult> {
@@ -104,6 +126,26 @@ export async function scheduleTestReminder(
     throw unavailable();
   }
   return native.scheduleTestReminder(title, body, inSeconds);
+}
+
+/** Debug-only class-start alarm through the real production path. */
+export async function scheduleTestClassStart(
+  subject: string,
+  courseCode: string,
+  inSeconds: number,
+): Promise<NativeTestResult> {
+  if (!native) {
+    throw unavailable();
+  }
+  return native.scheduleTestClassStart(subject, courseCode, inSeconds);
+}
+
+/** Debug builds only (native refuses in release). */
+export async function cancelTestClassStart(): Promise<boolean> {
+  if (!native) {
+    throw unavailable();
+  }
+  return native.cancelTestClassStart();
 }
 
 const PERMISSION_ASKED_KEY = 'myclassu.reminders.permissionAsked.v1';

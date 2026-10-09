@@ -104,6 +104,43 @@ class ReminderContractTest {
   }
 
   @Test
+  fun classStartId_neverCollidesWithReminderId() {
+    val reminder = ReminderContract.stableId("2026-10-12", "s1")
+    val alarm = ReminderContract.classStartId("2026-10-12", "s1")
+    assertEquals("2026-10-12|s1|reminder-5min", reminder)
+    assertEquals("2026-10-12|s1|class-start", alarm)
+    assertTrue(reminder != alarm)
+    assertTrue(ReminderContract.requestCode(reminder) != ReminderContract.requestCode(alarm))
+  }
+
+  @Test
+  fun classStartTrigger_firesExactlyAtStart() {
+    // 14:00 IST class → alarm at 14:00:00.000 IST == 08:30 UTC.
+    val trigger = ReminderContract.triggerAtMillis("2026-10-05", 14 * 60, leadMinutes = 0)
+    assertEquals(utcMillis(2026, 10, 5, 8, 30), trigger)
+  }
+
+  @Test
+  fun classStartBody_listsTimeRoomAndFaculty() {
+    assertEquals(
+      "It's time for class\n2:00 PM – 2:50 PM\nICT / 606\nTadi Srinivas",
+      ReminderContract.classStartBody("2:00 PM", "2:50 PM", "ICT / 606", "Tadi Srinivas"),
+    )
+  }
+
+  @Test
+  fun classStartBody_omitsMissingRoomAndFaculty() {
+    assertEquals(
+      "It's time for class\n9:00 AM – 9:50 AM",
+      ReminderContract.classStartBody("9:00 AM", "9:50 AM", null, null),
+    )
+    assertEquals(
+      "It's time for class\n9:00 AM – 9:50 AM",
+      ReminderContract.classStartBody("9:00 AM", "9:50 AM", "null", "  "),
+    )
+  }
+
+  @Test
   fun validate_acceptsWellFormedPayload() {
     assertTrue(
       ReminderContract.validate("2026-10-12", "s1", "Subject", 600).isEmpty(),

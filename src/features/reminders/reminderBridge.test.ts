@@ -6,12 +6,15 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 import {
+  cancelClassStartAlarms,
+  cancelTestClassStart,
   cancelTestReminder,
   canScheduleExactAlarms,
   getReminderPermissionStatus,
   getScheduledReminderIds,
   isReminderBridgeAvailable,
   scheduleReminders,
+  scheduleTestClassStart,
   scheduleTestReminder,
 } from './reminderBridge';
 
@@ -39,6 +42,15 @@ describe('reminderBridge — native module absent', () => {
       'ClassReminder native module is unavailable',
     );
     await expect(cancelTestReminder()).rejects.toThrow(
+      'ClassReminder native module is unavailable',
+    );
+    await expect(scheduleTestClassStart('S', 'C', 30)).rejects.toThrow(
+      'ClassReminder native module is unavailable',
+    );
+    await expect(cancelTestClassStart()).rejects.toThrow(
+      'ClassReminder native module is unavailable',
+    );
+    await expect(cancelClassStartAlarms()).rejects.toThrow(
       'ClassReminder native module is unavailable',
     );
   });

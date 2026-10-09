@@ -112,14 +112,18 @@ function DeveloperReminderTools() {
 
   const cancelAll = async () => {
     try {
-      const { cancelAllReminders, cancelTestReminder } = await import(
-        '../../features/reminders/reminderBridge'
-      );
+      const { cancelAllReminders, cancelTestReminder, cancelTestClassStart } =
+        await import('../../features/reminders/reminderBridge');
       const result = await cancelAllReminders();
-      // The one-shot test alarm uses a different action identity, so it is
-      // not part of the class set — cancel it explicitly. Debug-only API.
+      // The one-shot test alarms use different action identities, so they
+      // are not part of the class set — cancel them explicitly. Debug only.
       try {
         await cancelTestReminder();
+      } catch {
+        // Test-alarm cleanup is best effort.
+      }
+      try {
+        await cancelTestClassStart();
       } catch {
         // Test-alarm cleanup is best effort.
       }
@@ -137,10 +141,64 @@ function DeveloperReminderTools() {
     }
   };
 
+  const scheduleTestAlarm = async () => {
+    try {
+      const { scheduleTestClassStart } = await import(
+        '../../features/reminders/reminderBridge'
+      );
+      const result = await scheduleTestClassStart(
+        'Advanced Computer Networks',
+        'CSEN3141',
+        30,
+      );
+      showToast({
+        title: result.scheduled
+          ? 'Test class alarm armed'
+          : 'Test alarm failed',
+        message: result.scheduled
+          ? 'Fires in ~30 seconds with full-screen intent.'
+          : 'Check logcat for the native cause.',
+        tone: result.scheduled ? 'success' : 'error',
+      });
+    } catch {
+      showToast({
+        title: 'Test alarm unavailable',
+        message: 'The native reminder module is missing on this build.',
+        tone: 'error',
+      });
+    }
+  };
+
+  const cancelTestAlarm = async () => {
+    try {
+      const { cancelTestClassStart } = await import(
+        '../../features/reminders/reminderBridge'
+      );
+      const cancelled = await cancelTestClassStart();
+      showToast({
+        title: cancelled ? 'Test class alarm cancelled' : 'Nothing to cancel',
+        message: 'The pending test class-start alarm was removed.',
+        tone: 'success',
+      });
+    } catch {
+      showToast({
+        title: 'Cancellation unavailable',
+        message: 'The native reminder module is missing on this build.',
+        tone: 'error',
+      });
+    }
+  };
+
   return (
     <>
       <Button variant="tertiary" onPress={scheduleTest}>
         Schedule test reminder (30 s)
+      </Button>
+      <Button variant="tertiary" onPress={scheduleTestAlarm}>
+        Schedule test class alarm (30 s)
+      </Button>
+      <Button variant="tertiary" onPress={cancelTestAlarm}>
+        Cancel test class alarm
       </Button>
       <Button variant="tertiary" onPress={cancelAll}>
         Cancel all reminders

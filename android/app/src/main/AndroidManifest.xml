@@ -7,6 +7,11 @@
     <!-- Exact 5-minute reminders where the user/device grants access; the
          scheduler falls back to inexact alarms otherwise (never crashes). -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Class-start alarm: vibration + full-screen intent (alarm use-case).
+         FSI is install-granted for alarms; without it the notification still
+         posts as an ongoing heads-up entry point to the alarm screen. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <application
       android:name=".MainApplication"
@@ -31,12 +36,26 @@
       </activity>
       <!-- Class reminder delivery + boot/time-change recovery. Never exported:
            only this app's alarms and the system can reach it. -->
+      <!-- Class-start alarm screen: native entry point, works with the app
+           process dead. Single instance (no duplicates), portrait, kept off
+           recents, allowed over the lock screen without unlocking. -->
+      <activity
+        android:name=".reminders.ClassAlarmActivity"
+        android:theme="@style/Theme.ClassAlarm"
+        android:launchMode="singleInstance"
+        android:screenOrientation="portrait"
+        android:excludeFromRecents="true"
+        android:showWhenLocked="true"
+        android:turnScreenOn="true"
+        android:exported="false" />
       <receiver
         android:name=".reminders.ClassReminderReceiver"
         android:exported="false">
         <intent-filter>
             <action android:name="com.myclassu.reminders.SHOW_REMINDER" />
             <action android:name="com.myclassu.reminders.SHOW_TEST_REMINDER" />
+            <action android:name="com.myclassu.reminders.SHOW_CLASS_START" />
+            <action android:name="com.myclassu.reminders.SHOW_TEST_CLASS_START" />
         </intent-filter>
         <intent-filter>
             <action android:name="android.intent.action.BOOT_COMPLETED" />

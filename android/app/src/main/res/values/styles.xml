@@ -6,4 +6,10 @@
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     </style>
 
+    <!-- Class-start alarm: fixed dark surface so cold-start never flashes. -->
+    <style name="Theme.ClassAlarm" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">#121110</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
 </resources>
