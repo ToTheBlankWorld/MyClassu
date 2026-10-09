@@ -206,7 +206,13 @@ object ClassReminderScheduler {
     subject: String,
     courseCode: String,
   ): Boolean {
-    val stableId = "dev-test|test-alarm|${ReminderContract.CLASS_START_KIND}"
+    // A real IST date key (but an unmistakably fake session ID) so the test
+    // alarm exercises the exact same validation as production payloads.
+    val todayKey = ReminderContract.dateKeyFor(
+      ReminderContract.TIMEZONE_ID,
+      System.currentTimeMillis(),
+    )
+    val stableId = "$todayKey|test-alarm|${ReminderContract.CLASS_START_KIND}"
     val intent = classStartIntent(
       context,
       stableId,
@@ -216,7 +222,7 @@ object ClassReminderScheduler {
       endLabel = "later",
       room = "ICT / TEST",
       instructor = "Test Faculty",
-      dateKey = "dev-test",
+      dateKey = todayKey,
       sessionId = "test-alarm",
       isTest = true,
     )

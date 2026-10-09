@@ -152,6 +152,56 @@ Back behaves as dismiss. Missing payload finishes immediately.
 (`__DEV__` only) buttons drive the real production path with a 30 s
 fuse. Nothing here ships to users or release builds.
 
+## Attendance response flow (Stage 7)
+
+The class-start alarm is now an attendance decision point, still fully
+native and cold-start safe.
+
+### Actions
+
+- I'M IN CLASS: validates the payload, upserts an `attended` record,
+  stops sound/vibration, removes the ongoing notification, consumes the
+  occurrence (no re-fire), finishes. Repeat-safe.
+- I'M NOT IN CLASS: silences the alert immediately, then shows the
+  native reason picker. Nothing is saved until Submit; Cancel/back
+  returns to the alarm view with nothing recorded. Back on the alarm
+  view exits without recording (occurrence still consumed).
+- No attendance actions exist beyond these two (Stage 8 owns analytics).
+
+### Local persistence model
+
+One authoritative store: native `AttendanceStore` (SharedPreferences,
+survives process death and reboot). The JS layer reads/syncs through
+the `Attendance` bridge — never a second database.
+
+- Identity: one record per occurrence, `<sessionId>|<dateKey>`.
+- Fields mirror Supabase `attendance_records` (session/date/status/
+  reason_category/reason_text/marked_at + local snapshots and a
+  `synced` outbox flag). Writes are upserts: replays, double-taps, and
+  duplicate intents update in place, never duplicate.
+- Offline: everything above works with no network; unsynced records
+  wait in the outbox.
+
+### Reasons
+
+Vocabulary follows the shared `skip_reasons` defaults
+(study, work, personal, health, overslept, entertainment, other);
+`Other` reveals an optional custom-reason field. Absence without a
+reason is permitted by the schema. Submit with no selection shows an
+inline error and saves nothing — cancelling is always distinct from
+submitting.
+
+### Sync boundary
+
+`attendanceSync` uploads only when a configured client, a user session,
+AND a server session-uuid mapping all exist (upsert on the established
+unique key `(class_session_id, date)`; per-record errors stay unsynced
+for retry; bookkeeping failures re-upload idempotently). The bundled
+timetable's local session IDs have no server uuids yet, so uploads
+currently defer as `unmapped` — the local store is complete and
+authoritative on-device; no service-role keys, no secrets, RLS respected
+(own rows only) once identity exists.
+
 ## Process-death note (fixed during Stage 5 verification)
 
 Returning to the app after the OS (or `am kill`) destroyed its process

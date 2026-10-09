@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from '../design';
 import { ToastProvider } from '../components';
 import { useClassReminders } from '../features/reminders/useClassReminders';
+import { useAttendanceSync } from '../features/attendance/useAttendanceSync';
 import { RootNavigator } from '../navigation/RootNavigator';
 
 /**
@@ -20,6 +21,8 @@ function ThemedNavigator() {
   const theme = useTheme();
   // Native class-reminder sync: idempotent, offline-first, never blocks UI.
   useClassReminders();
+  // Attendance outbox flush: best-effort upload, silent when offline.
+  useAttendanceSync();
 
   const navigationTheme = {
     ...(theme.isDark ? DarkTheme : DefaultTheme),

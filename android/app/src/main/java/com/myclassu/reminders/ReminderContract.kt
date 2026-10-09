@@ -140,6 +140,21 @@ object ReminderContract {
   }
 
   /**
+   * Local "YYYY-MM-DD" date key for an absolute instant in the given zone.
+   * Pure calendar math (UTC-based), independent of the device zone.
+   */
+  fun dateKeyFor(timeZoneId: String, nowMillis: Long): String {
+    val calendar = Calendar.getInstance(TimeZone.getTimeZone(timeZoneId)).apply {
+      timeInMillis = nowMillis
+    }
+    return "%04d-%02d-%02d".format(
+      calendar.get(Calendar.YEAR),
+      calendar.get(Calendar.MONTH) + 1,
+      calendar.get(Calendar.DAY_OF_MONTH),
+    )
+  }
+
+  /**
    * "2:00 PM" label for an absolute instant in the university timezone.
    * Uses [SimpleDateFormat] (available on all API levels, no desugaring).
    */

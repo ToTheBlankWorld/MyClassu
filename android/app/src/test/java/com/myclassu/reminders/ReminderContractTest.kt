@@ -114,6 +114,21 @@ class ReminderContractTest {
   }
 
   @Test
+  fun dateKeyFor_resolvesIstCalendarDate() {
+    // 2026-10-08 18:35 UTC == 2026-10-09 00:05 IST (past the IST midnight
+    // boundary while still Oct 8 in UTC).
+    val justAfterMidnightIst = utcMillis(2026, 10, 8, 18, 35)
+    assertEquals(
+      "2026-10-09",
+      ReminderContract.dateKeyFor("Asia/Kolkata", justAfterMidnightIst),
+    )
+    assertEquals(
+      "2026-10-08",
+      ReminderContract.dateKeyFor("Asia/Kolkata", utcMillis(2026, 10, 8, 10, 0)),
+    )
+  }
+
+  @Test
   fun classStartTrigger_firesExactlyAtStart() {
     // 14:00 IST class → alarm at 14:00:00.000 IST == 08:30 UTC.
     val trigger = ReminderContract.triggerAtMillis("2026-10-05", 14 * 60, leadMinutes = 0)

@@ -71,12 +71,21 @@ export type AttendanceStatus =
  */
 export type ScheduleStatus = 'upcoming' | 'current' | 'completed';
 
+/**
+ * Absence reason vocabulary. Mirrors the shared defaults in
+ * `supabase/migrations/20261006090002_attendance_and_skip_reasons.sql`
+ * (entertainment, study, work, personal, health, overslept, other) —
+ * `reason_category` is free text server-side, so these values stay
+ * compatible. Transport etc. travel as custom `reasonText` with
+ * category `other`.
+ */
 export type SkipReasonCategory =
-  | 'sick'
+  | 'study'
+  | 'work'
   | 'personal'
-  | 'event'
-  | 'unprepared'
-  | 'cancelled'
+  | 'health'
+  | 'overslept'
+  | 'entertainment'
   | 'other';
 
 /**

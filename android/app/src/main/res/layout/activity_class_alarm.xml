@@ -92,26 +92,120 @@
             android:textColor="#A19A8F"
             android:textSize="17sp" />
 
-        <Button
-            android:id="@+id/alarm_dismiss"
+        <LinearLayout
+            android:id="@+id/alarm_actions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="56dp"
-            android:minHeight="56dp"
-            android:backgroundTint="#45AFA2"
-            android:text="Dismiss"
-            android:textAllCaps="false"
-            android:textColor="#121110"
-            android:textSize="17sp" />
+            android:orientation="vertical">
 
-        <TextView
+            <Button
+                android:id="@+id/alarm_in_class"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="56dp"
+                android:backgroundTint="#45AFA2"
+                android:text="I'M IN CLASS"
+                android:textAllCaps="false"
+                android:textColor="#121110"
+                android:textSize="17sp" />
+
+            <Button
+                android:id="@+id/alarm_not_in_class"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:minHeight="56dp"
+                android:background="@drawable/alarm_outline_button"
+                android:text="I'M NOT IN CLASS"
+                android:textAllCaps="false"
+                android:textColor="#45AFA2"
+                android:textSize="17sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/reason_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_horizontal"
-            android:text="Marking attendance happens in the app"
-            android:textColor="#5C564E"
-            android:textSize="13sp" />
+            android:layout_marginTop="40dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:text="WHY DID YOU MISS IT?"
+                android:textColor="#A19A8F"
+                android:textSize="13sp"
+                android:letterSpacing="0.18" />
+
+            <TextView
+                android:id="@+id/reason_context"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_horizontal"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp" />
+
+            <RadioGroup
+                android:id="@+id/reason_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="vertical" />
+
+            <EditText
+                android:id="@+id/reason_custom"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="Custom reason (optional)"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#5C564E"
+                android:textSize="16sp"
+                android:inputType="textCapSentences"
+                android:maxLines="3"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/reason_error"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_horizontal"
+                android:text="Choose a reason to submit"
+                android:textColor="#CC5544"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/reason_submit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:minHeight="56dp"
+                android:backgroundTint="#45AFA2"
+                android:text="Submit"
+                android:textAllCaps="false"
+                android:textColor="#121110"
+                android:textSize="17sp" />
+
+            <Button
+                android:id="@+id/reason_cancel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:minHeight="56dp"
+                android:background="@drawable/alarm_outline_button"
+                android:text="Cancel"
+                android:textAllCaps="false"
+                android:textColor="#45AFA2"
+                android:textSize="17sp" />
+
+        </LinearLayout>
 
     </LinearLayout>
 </ScrollView>
