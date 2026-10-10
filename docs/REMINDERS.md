@@ -32,8 +32,12 @@ FLAG_IMMUTABLE`. Re-syncing replaces; it can never duplicate.
   persists source fields (dateKey + startMinutes + display fields — never
   precomputed instants), and reports `{ scheduled, skippedPast, exact }`.
 - Coverage: the engine yields each session's nearest occurrence per call,
-  so JS unions three horizons (now, +7d, +14d) ≈ 42 alarms / ~3 weeks,
-  deduplicated by stable ID and re-synced on every app start.
+  so JS unions three horizons (now, +7d, +14d) — one occurrence per
+  session per horizon (≈ sessions × 3 alarms / ~3 weeks), deduplicated
+  by stable ID and re-synced on every app start and every timetable
+  change. The per-horizon request always covers the full session count
+  (Stage 11 fix: a fixed cap used to silently drop sessions past the
+  cutoff on larger timetables).
 - Timezone: Asia/Kolkata wall-clock → UTC millis with an explicit zone
   (India has no DST). Any other zone fails fast in both layers.
 
@@ -141,7 +145,7 @@ Back behaves as dismiss. Missing payload finishes immediately.
   Skipped when the ringer is silent (vibration carries the alarm then).
 - Vibration: 1s-on/1s-off repeating waveform (stronger than the
   reminder buzz), cancelled on dismiss/destroy.
-- Dismiss ("Dismiss" button or back): stops sound + vibration, removes
+- Dismiss (system back): stops sound + vibration, removes
   the ongoing notification, forgets the occurrence (no re-fire), records
   nothing (attendance is a later stage).
 
@@ -150,7 +154,9 @@ Back behaves as dismiss. Missing payload finishes immediately.
 `scheduleTestClassStart` / `cancelTestClassStart` (bridge +
 `BuildConfig.DEBUG`-gated native, unpersisted) and Settings → Developer
 (`__DEV__` only) buttons drive the real production path with a 30 s
-fuse. Nothing here ships to users or release builds.
+fuse. The test alarm uses one fixed stable ID shared by its schedule
+and cancel paths (Stage 11 fix: a date-derived schedule ID once made
+cancellation silently miss). Nothing here ships to users or release builds.
 
 ## Attendance response flow (Stage 7)
 

@@ -4,6 +4,7 @@ import {
   REMINDER_LEAD_MINUTES,
 } from './classReminders';
 import { createTimetableService } from '../timetable/service/timetableService';
+import type { ClassSession } from '../../domain/models';
 import { timetable } from '../timetable/data/timetable';
 
 /**
@@ -157,5 +158,36 @@ describe('buildReminderPayloads — five-minute offset', () => {
     });
     // One occurrence per weekly session from Monday 08:00.
     expect(payloads).toHaveLength(14);
+  });
+
+  it('covers every session when the timetable exceeds any fixed cap', () => {
+    // 25 non-overlapping Monday sessions: a fixed per-horizon cap (the old
+    // default covered 20) would silently drop the last five alarms.
+    const courseId = timetable.courses[0].id;
+    const pad = (n: number): string => String(n).padStart(2, '0');
+    const sessions: ClassSession[] = Array.from({ length: 25 }, (_, i) => {
+      const startHour = Math.floor(i / 2);
+      const startMinute = i % 2 === 0 ? '00' : '30';
+      const endHour = startMinute === '00' ? startHour : startHour + 1;
+      const endMinute = startMinute === '00' ? '30' : '00';
+      return {
+        id: `synth-${i}`,
+        courseId,
+        weekday: 'monday',
+        startTime: `${pad(startHour)}:${startMinute}`,
+        endTime: `${pad(endHour)}:${endMinute}`,
+      };
+    });
+    const big = createTimetableService({
+      timezone: 'Asia/Kolkata',
+      courses: timetable.courses,
+      sessions,
+    });
+    expect(big.sessionCount).toBe(25);
+    const payloads = buildReminderPayloads(ist(5, 8, 0), big, {
+      horizonOffsetsDays: [],
+    });
+    expect(payloads).toHaveLength(25);
+    expect(new Set(payloads.map(p => p.sessionId)).size).toBe(25);
   });
 });

@@ -220,13 +220,15 @@ object ClassReminderScheduler {
     subject: String,
     courseCode: String,
   ): Boolean {
-    // A real IST date key (but an unmistakably fake session ID) so the test
-    // alarm exercises the exact same validation as production payloads.
+    // The payload extras carry a real IST date key (and an unmistakably
+    // fake session ID) so the test alarm exercises the exact same
+    // validation as production payloads. The PendingIntent identity stays
+    // fixed (TEST_CLASS_START_STABLE_ID) so cancellation always resolves.
     val todayKey = ReminderContract.dateKeyFor(
       ReminderContract.TIMEZONE_ID,
       System.currentTimeMillis(),
     )
-    val stableId = "$todayKey|test-alarm|${ReminderContract.CLASS_START_KIND}"
+    val stableId = ReminderContract.TEST_CLASS_START_STABLE_ID
     val intent = classStartIntent(
       context,
       stableId,
@@ -246,7 +248,7 @@ object ClassReminderScheduler {
   fun cancelTestClassStart(context: Context) {
     cancelByStableId(
       context,
-      "dev-test|test-alarm|${ReminderContract.CLASS_START_KIND}",
+      ReminderContract.TEST_CLASS_START_STABLE_ID,
       ReminderContract.ACTION_SHOW_TEST_CLASS_START,
     )
   }

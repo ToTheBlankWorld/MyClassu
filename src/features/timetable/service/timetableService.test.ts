@@ -35,6 +35,11 @@ describe('timetableService (bound to the bundled timetable)', () => {
     expect(() => timetableService).not.toThrow();
   });
 
+  it('exposes the session count for full-coverage reminder planning', () => {
+    expect(timetableService.sessionCount).toBe(timetable.sessions.length);
+    expect(timetable.sessions.length).toBeGreaterThan(0);
+  });
+
   it('throws on malformed data instead of misbehaving later', () => {
     const broken = {
       ...timetable,

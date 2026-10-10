@@ -36,6 +36,8 @@ import {
 export interface TimetableService {
   /** IANA timezone the timetable is evaluated in */
   readonly timezone: string;
+  /** Number of sessions — bounds per-horizon reminder coverage. */
+  readonly sessionCount: number;
   getClassesForDay(weekday: Weekday): ClassSession[];
   getClassesForDate(date: Date): ClassSession[];
   /** Classes for the whole monday-first week containing `date`. */
@@ -69,6 +71,7 @@ export function createTimetableService(timetable: Timetable): TimetableService {
 
   return {
     timezone: timeZone,
+    sessionCount: timetable.sessions.length,
     getClassesForDay: weekday => getClassesForDay(timetable, weekday),
     getClassesForDate: date => getClassesForDate(timetable, date, timeZone),
     getClassesForWeek: date => getClassesForWeek(timetable, date, timeZone),

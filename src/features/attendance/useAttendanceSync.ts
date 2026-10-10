@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import { getSupabaseClient } from '../../services/supabase/client';
 import type { SyncClient } from '../sync/timetableSync';
-import { getActiveTimetable } from '../timetable/service/timetableStore';
+import {
+  getActiveTimetable,
+  useActiveTimetable,
+} from '../timetable/service/timetableStore';
 import { loadReportPrefs } from '../reports/reportPrefs';
 import { syncTimetable } from '../sync/timetableSync';
 import { syncEmailSettings } from '../sync/emailSettingsSync';
@@ -111,11 +114,19 @@ export async function runCloudSync(): Promise<CloudSyncSummary> {
 }
 
 /**
- * Best-effort cloud sync on app start. Silent by design: sync must never
- * break launch, and an empty/unconfigured backend simply defers.
+ * Best-effort cloud sync on app start and whenever the timetable changes.
+ * A timetable edit is the moment server mappings (and therefore outbox
+ * eligibility) change, so waiting for the next launch would needlessly
+ * delay uploads. Silent by design: sync must never break launch or
+ * editing, and an empty/unconfigured backend simply defers.
  */
 export function useAttendanceSync(): void {
+  const { service, ready } = useActiveTimetable();
+
   useEffect(() => {
+    if (!ready) {
+      return;
+    }
     let cancelled = false;
     const flush = async () => {
       await runCloudSync();
@@ -127,5 +138,8 @@ export function useAttendanceSync(): void {
     return () => {
       cancelled = true;
     };
-  }, []);
+    // Re-run when the timetable data or its identity changes (commits
+    // rebuild the bound service). runCloudSync is idempotent, so
+    // overlapping runs converge instead of duplicating.
+  }, [ready, service]);
 }

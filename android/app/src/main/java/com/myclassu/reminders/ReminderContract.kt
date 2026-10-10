@@ -44,6 +44,16 @@ object ReminderContract {
   /** AlarmReceiver action for a development-only test class-start firing. */
   const val ACTION_SHOW_TEST_CLASS_START = "com.myclassu.reminders.SHOW_TEST_CLASS_START"
 
+  /**
+   * Fixed identity for the development-only test class-start alarm. Fixed
+   * (not date-derived) on purpose: the cancel path must always resolve the
+   * same PendingIntent, including across an IST midnight boundary. The
+   * fired payload still carries the real IST date key and an unmistakably
+   * fake session ID in its extras, so production validation runs
+   * identically on test alarms.
+   */
+  const val TEST_CLASS_START_STABLE_ID = "dev-test|test-alarm|class-start"
+
   const val CHANNEL_ID = "myclassu_class_reminders"
 
   /** Dedicated channel for the class-start alarm (sound/vibration/FSI). */

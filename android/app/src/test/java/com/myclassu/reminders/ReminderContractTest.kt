@@ -114,6 +114,23 @@ class ReminderContractTest {
   }
 
   @Test
+  fun testClassStartId_isFixedAndDistinct() {
+    // The dev-only test alarm uses one fixed identity so its cancel path
+    // always resolves the scheduled PendingIntent (a date-derived ID
+    // would miss across midnight). It must never equal a production ID.
+    assertEquals(
+      "dev-test|test-alarm|class-start",
+      ReminderContract.TEST_CLASS_START_STABLE_ID,
+    )
+    val production = ReminderContract.classStartId("2026-10-12", "s1")
+    assertTrue(ReminderContract.TEST_CLASS_START_STABLE_ID != production)
+    assertTrue(
+      ReminderContract.requestCode(ReminderContract.TEST_CLASS_START_STABLE_ID) !=
+        ReminderContract.requestCode(production),
+    )
+  }
+
+  @Test
   fun dateKeyFor_resolvesIstCalendarDate() {
     // 2026-10-08 18:35 UTC == 2026-10-09 00:05 IST (past the IST midnight
     // boundary while still Oct 8 in UTC).

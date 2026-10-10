@@ -42,7 +42,12 @@ export interface ClassReminderPayload {
 }
 
 export interface BuildReminderOptions {
-  /** Occurrences requested per horizon (default 14 = every weekly session). */
+  /**
+   * Occurrences requested per horizon. Defaults to the timetable's session
+   * count so EVERY session's nearest occurrence is covered — a fixed small
+   * cap would silently drop sessions past the cutoff (and user-added
+   * sessions push real timetables past any fixed number).
+   */
   upcomingLimit?: number;
   /** Minutes before start (default 5). */
   leadMinutes?: number;
@@ -94,10 +99,14 @@ export function buildReminderPayloads(
   options: BuildReminderOptions = {},
 ): ClassReminderPayload[] {
   const {
-    upcomingLimit = 20,
     leadMinutes = REMINDER_LEAD_MINUTES,
     horizonOffsetsDays = DEFAULT_HORIZONS_DAYS,
+    // Full weekly coverage per horizon: one nearest occurrence per session.
+    upcomingLimit = service.sessionCount,
   } = options;
+  if (service.sessionCount === 0 || upcomingLimit < 1) {
+    return [];
+  }
   const bases = [now, ...horizonOffsetsDays.map(days => shiftDays(now, days))];
   const seen = new Set<string>();
   const payloads: ClassReminderPayload[] = [];
