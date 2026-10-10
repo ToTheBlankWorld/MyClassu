@@ -23,6 +23,8 @@ export type MainTabParamList = {
 export type RootStackParamList = {
   Main: undefined;
   DesignSystem: undefined;
+  Timetable: undefined;
+  SessionEditor: { sessionId?: string } | undefined;
 };
 
 declare global {

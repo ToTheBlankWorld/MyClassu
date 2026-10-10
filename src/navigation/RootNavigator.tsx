@@ -4,8 +4,10 @@ import { DesignSystemShowcaseScreen } from '../app/screens/DesignSystemShowcaseS
 import { AttendanceScreen } from '../app/screens/AttendanceScreen';
 import { HomeScreen } from '../app/screens/HomeScreen';
 import { ScheduleScreen } from '../app/screens/ScheduleScreen';
+import { SessionEditorScreen } from '../app/screens/SessionEditorScreen';
 import { SettingsScreen } from '../app/screens/SettingsScreen';
 import { StatisticsScreen } from '../app/screens/StatisticsScreen';
+import { TimetableScreen } from '../app/screens/TimetableScreen';
 import { TabBar } from './TabBar';
 import type { MainTabParamList, RootStackParamList } from './types';
 
@@ -42,6 +44,8 @@ export function RootNavigator() {
         component={DesignSystemShowcaseScreen}
         options={{ animation: 'slide_from_bottom' }}
       />
+      <RootStack.Screen name="Timetable" component={TimetableScreen} />
+      <RootStack.Screen name="SessionEditor" component={SessionEditorScreen} />
     </RootStack.Navigator>
   );
 }

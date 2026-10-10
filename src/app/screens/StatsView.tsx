@@ -23,7 +23,8 @@ import {
 import type { LocalAttendanceRecord } from '../../features/attendance/attendance';
 import { AttendanceSummaryCard } from '../../features/attendance/components/AttendanceSummary';
 import type { AttendanceRecordsStatus } from '../../features/attendance/useAttendanceRecords';
-import { timetableService } from '../../features/timetable/service/timetableService';
+import { useActiveTimetable } from '../../features/timetable/service/timetableStore';
+import { useAttendancePrefs } from '../../features/attendance/attendancePrefs';
 import { zonedParts } from '../../utils/time';
 
 export interface StatsViewProps {
@@ -31,8 +32,6 @@ export interface StatsViewProps {
   records: LocalAttendanceRecord[];
   onRetry: () => void;
 }
-
-const TREND_WEEKS = 6;
 
 /**
  * Presentational Stats screen: overview, subject breakdown, reason
@@ -64,17 +63,18 @@ function StatsContent({ records }: { records: LocalAttendanceRecord[] }) {
   const summary = useMemo(() => summarizeAttendance(records), [records]);
   const subjects = useMemo(() => groupBySubject(records), [records]);
   const reasons = useMemo(() => breakdownReasons(records), [records]);
+  const { service } = useActiveTimetable();
+  const { prefs } = useAttendancePrefs();
   const trend = useMemo(() => {
-    const service = timetableService;
     const todayKey = zonedParts(new Date(), service.timezone).dateKey;
-    return buildWeeklyTrend(records, todayKey, TREND_WEEKS, dateKey => {
+    return buildWeeklyTrend(records, todayKey, prefs.trendWeeks, dateKey => {
       try {
         return service.getClassesForDateKey(dateKey).length;
       } catch {
         return 0;
       }
     });
-  }, [records]);
+  }, [records, service, prefs.trendWeeks]);
 
   return (
     <Screen>

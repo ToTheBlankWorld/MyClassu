@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSupabaseClient } from '../../services/supabase/client';
 import type { Database } from '../../services/supabase/database.types';
 import {
@@ -30,6 +31,42 @@ export interface AttendanceSyncResult {
   unmapped: number;
   deferred: boolean;
   errors: string[];
+}
+
+const LAST_SYNC_KEY = 'myclassu.lastAttendanceSync.v1';
+
+export interface StoredSyncResult extends AttendanceSyncResult {
+  atMillis: number;
+}
+
+export async function saveLastSyncResult(
+  result: AttendanceSyncResult,
+): Promise<void> {
+  try {
+    const stored: StoredSyncResult = { ...result, atMillis: Date.now() };
+    await AsyncStorage.setItem(LAST_SYNC_KEY, JSON.stringify(stored));
+  } catch {
+    // Telemetry must never break sync.
+  }
+}
+
+export async function loadLastSyncResult(): Promise<StoredSyncResult | null> {
+  try {
+    const raw = await AsyncStorage.getItem(LAST_SYNC_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as Partial<StoredSyncResult>;
+    if (
+      typeof parsed.synced !== 'number' ||
+      typeof parsed.atMillis !== 'number'
+    ) {
+      return null;
+    }
+    return parsed as StoredSyncResult;
+  } catch {
+    return null;
+  }
 }
 
 /** Local session ID → server class_sessions uuid. Empty until cloud sync. */

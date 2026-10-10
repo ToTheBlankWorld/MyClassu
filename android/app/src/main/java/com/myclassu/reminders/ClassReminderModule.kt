@@ -2,10 +2,15 @@ package com.myclassu.reminders
 
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableArray
+import com.facebook.react.bridge.ReadableMap
 import com.myclassu.BuildConfig
 
 /**
@@ -23,12 +28,18 @@ class ClassReminderModule(
   override fun getName(): String = NAME
 
   /**
-   * Replace the entire reminder schedule. Each entry:
+   * Replace the reminder schedule. Each entry:
    * { dateKey, sessionId, subject, startMinutes, startLabel, room? }.
+   * `options` ({ reminders?: boolean, alarms?: boolean }) gates which
+   * kinds are (re)scheduled — disabling one kind never touches the other.
    * Resolves { scheduled, skippedPast, exact }.
    */
   @ReactMethod
-  fun scheduleReminders(reminders: ReadableArray?, promise: Promise) {
+  fun scheduleReminders(
+    reminders: ReadableArray?,
+    options: ReadableMap?,
+    promise: Promise,
+  ) {
     try {
       val occurrences = mutableListOf<ClassReminderScheduler.Occurrence>()
       if (reminders != null) {
@@ -52,7 +63,20 @@ class ClassReminderModule(
           )
         }
       }
-      val result = ClassReminderScheduler.replaceAll(reactApplicationContext, occurrences)
+      // A disabled kind is left exactly as the user left it (toggles
+      // cancel explicitly); an enabled kind is replaced idempotently.
+      val enabledKinds = mutableSetOf<String>()
+      if (optionsBoolean(options, "reminders", default = true)) {
+        enabledKinds.add(ReminderContract.REMINDER_KIND)
+      }
+      if (optionsBoolean(options, "alarms", default = true)) {
+        enabledKinds.add(ReminderContract.CLASS_START_KIND)
+      }
+      val result = ClassReminderScheduler.replaceAll(
+        reactApplicationContext,
+        occurrences,
+        enabledKinds,
+      )
       promise.resolve(
         Arguments.createMap().apply {
           putInt("scheduled", result.scheduled)
@@ -232,6 +256,75 @@ class ClassReminderModule(
       promise.resolve(true)
     } catch (e: Exception) {
       promise.reject("TEST_CANCEL_FAILED", e.message, e)
+    }
+  }
+
+  /** Persist alarm sound/vibration preferences for the alarm Activity. */
+  @ReactMethod
+  fun setAlarmSoundVibration(sound: Boolean, vibration: Boolean, promise: Promise) {
+    try {
+      AlarmPrefs.write(reactApplicationContext, sound, vibration)
+      promise.resolve(true)
+    } catch (e: Exception) {
+      promise.reject("PREFS_FAILED", e.message, e)
+    }
+  }
+
+  /** Open the app's system notification settings page. */
+  @ReactMethod
+  fun openNotificationSettings(promise: Promise) {
+    try {
+      val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+          putExtra(Settings.EXTRA_APP_PACKAGE, reactApplicationContext.packageName)
+        }
+      } else {
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+          data = Uri.parse("package:${reactApplicationContext.packageName}")
+        }
+      }
+      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      reactApplicationContext.startActivity(intent)
+      promise.resolve(true)
+    } catch (e: Exception) {
+      promise.reject("SETTINGS_FAILED", e.message, e)
+    }
+  }
+
+  /**
+   * Open the exact-alarm access page (API 31+), falling back to the app
+   * details page. Some devices/OEMs hide the page — failure resolves
+   * false instead of throwing so the UI can say so honestly.
+   */
+  @ReactMethod
+  fun openExactAlarmSettings(promise: Promise) {
+    try {
+      val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+          data = Uri.parse("package:${reactApplicationContext.packageName}")
+        }
+      } else {
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+          data = Uri.parse("package:${reactApplicationContext.packageName}")
+        }
+      }
+      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      reactApplicationContext.startActivity(intent)
+      promise.resolve(true)
+    } catch (e: Exception) {
+      promise.resolve(false)
+    }
+  }
+
+  private fun optionsBoolean(options: ReadableMap?, key: String, default: Boolean): Boolean {
+    return try {
+      if (options == null || !options.hasKey(key) || options.isNull(key)) {
+        default
+      } else {
+        options.getBoolean(key)
+      }
+    } catch (e: Exception) {
+      default
     }
   }
 

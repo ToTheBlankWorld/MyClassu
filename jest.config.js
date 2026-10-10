@@ -7,6 +7,8 @@ module.exports = {
   moduleNameMapper: {
     '^react-native-reanimated$': '<rootDir>/jest/reanimated-mock.js',
     '^react-native-haptic-feedback$': '<rootDir>/jest/haptic-feedback-mock.js',
+    '^@react-native-async-storage/async-storage$':
+      '<rootDir>/jest/async-storage-mock.js',
     '^lucide-react-native$':
       '<rootDir>/node_modules/lucide-react-native/dist/cjs/lucide-react-native.js',
   },

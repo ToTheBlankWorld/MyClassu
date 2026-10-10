@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNow } from '../../hooks/useNow';
 import type { ScheduleView } from './schedule';
 import { buildScheduleView } from './schedule';
+import { useActiveTimetable } from './service/timetableStore';
 import { addDays } from '../../utils/time';
 
 /**
@@ -33,21 +34,25 @@ export function useSchedule(): UseScheduleResult {
   const [view, setView] = useState<ScheduleView | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  /** Last Asia/Kolkata today seen — anchors week shifts while unselected. */
+  /** Last Asia/Kolkata today seen �?" anchors week shifts while unselected. */
   const todayKeyRef = useRef<string | null>(null);
+  const { timetable, ready } = useActiveTimetable();
 
   useEffect(() => {
+    if (!ready) {
+      return;
+    }
     try {
-      const built = buildScheduleView(now, selectedKey);
+      const built = buildScheduleView(now, selectedKey, timetable);
       todayKeyRef.current = built.todayKey;
       setView(built);
       setStatus('ready');
     } catch {
-      // Malformed timetable data or date key — retryable error, no crash.
+      // Malformed timetable data or date key �?" retryable error, no crash.
       setView(null);
       setStatus('error');
     }
-  }, [now, selectedKey, attempt]);
+  }, [now, selectedKey, attempt, timetable, ready]);
 
   const selectDay = useCallback((dateKey: string) => {
     setSelectedKey(dateKey);

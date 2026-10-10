@@ -74,6 +74,7 @@ export interface DashboardNextClass {
 }
 
 export interface DashboardUpcomingEntry {
+  sessionId: string;
   courseCode: string;
   courseTitle: string;
   room?: string;
@@ -197,6 +198,7 @@ export function buildHomeDashboard(
     .slice(0, 3)
     .map(occurrence => ({
       ...describeOccurrence(occurrence),
+      sessionId: occurrence.session.id,
       startTimeLabel: formatTime12h(occurrence.startMinutes),
       dayLabel: dayLabelFor(occurrence.dateKey, todayKey),
       dateKey: occurrence.dateKey,

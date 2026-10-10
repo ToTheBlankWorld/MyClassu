@@ -1,5 +1,13 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Theme } from './theme';
 import { darkTheme, lightTheme } from './theme';
 
@@ -7,11 +15,32 @@ import { darkTheme, lightTheme } from './theme';
  * Theme provider. Supports three preferences:
  *   'system' (default) — follows the OS setting
  *   'light' / 'dark'   — explicit override
- * The preference lives here so the Settings screen (and later, persistence)
- * has one place to control it; components only ever consume resolved tokens.
+ * The preference lives here so the Settings screen has one place to
+ * control it; components only ever consume resolved tokens. The choice
+ * persists across restarts (malformed/missing storage → system).
  */
 
 export type ThemePreference = 'system' | 'light' | 'dark';
+
+export const THEME_PREFERENCE_KEY = 'myclassu.themePreference.v1';
+
+function sanitizePreference(raw: unknown): ThemePreference | null {
+  return raw === 'system' || raw === 'light' || raw === 'dark' ? raw : null;
+}
+
+export async function loadThemePreference(): Promise<ThemePreference | null> {
+  try {
+    return sanitizePreference(await AsyncStorage.getItem(THEME_PREFERENCE_KEY));
+  } catch {
+    return null;
+  }
+}
+
+export async function saveThemePreference(
+  preference: ThemePreference,
+): Promise<void> {
+  await AsyncStorage.setItem(THEME_PREFERENCE_KEY, preference);
+}
 
 interface ThemeContextValue {
   theme: Theme;
@@ -37,9 +66,28 @@ export function ThemeProvider({
   initialPreference = 'system',
   children,
 }: ThemeProviderProps) {
-  const [preference, setPreference] =
+  const [preference, setPreferenceState] =
     useState<ThemePreference>(initialPreference);
   const scheme = useColorScheme();
+
+  useEffect(() => {
+    let cancelled = false;
+    loadThemePreference()
+      .then(stored => {
+        if (!cancelled && stored) {
+          setPreferenceState(stored);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const setPreference = useCallback((next: ThemePreference) => {
+    setPreferenceState(next);
+    saveThemePreference(next).catch(() => undefined);
+  }, []);
 
   const value = useMemo<ThemeContextValue>(() => {
     const isDark =
@@ -49,7 +97,7 @@ export function ThemeProvider({
       preference,
       setPreference,
     };
-  }, [preference, scheme]);
+  }, [preference, scheme, setPreference]);
 
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

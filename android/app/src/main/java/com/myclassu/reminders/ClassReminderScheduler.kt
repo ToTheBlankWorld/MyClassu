@@ -56,9 +56,19 @@ object ClassReminderScheduler {
    * bad payload never breaks the whole sync, and opening the app repeatedly
    * produces the identical alarm set.
    */
-  fun replaceAll(context: Context, occurrences: List<Occurrence>): ScheduleResult {
+  /** Preference-gated kinds: reminders, class-start alarms, or both. */
+  fun replaceAll(
+    context: Context,
+    occurrences: List<Occurrence>,
+    enabledKinds: Set<String> = setOf(
+      ReminderContract.REMINDER_KIND,
+      ReminderContract.CLASS_START_KIND,
+    ),
+  ): ScheduleResult {
     ReminderNotifications.ensureChannels(context)
-    cancelPersisted(context)
+    // Replace only the kinds being synced; a disabled kind keeps whatever
+    // the user left scheduled (toggles cancel explicitly instead).
+    cancelByKinds(context, enabledKinds)
     var scheduled = 0
     var skippedPast = 0
     val now = System.currentTimeMillis()
@@ -72,24 +82,28 @@ object ClassReminderScheduler {
       if (problems.isNotEmpty()) {
         continue
       }
-      val reminderAt = ReminderContract.triggerAtMillis(
-        occurrence.dateKey,
-        occurrence.startMinutes,
-      )
-      if (reminderAt > now) {
-        if (armReminder(context, occurrence, reminderAt, persist = true)) {
-          scheduled++
+      if (ReminderContract.REMINDER_KIND in enabledKinds) {
+        val reminderAt = ReminderContract.triggerAtMillis(
+          occurrence.dateKey,
+          occurrence.startMinutes,
+        )
+        if (reminderAt > now) {
+          if (armReminder(context, occurrence, reminderAt, persist = true)) {
+            scheduled++
+          }
+        } else {
+          skippedPast++
         }
-      } else {
-        skippedPast++
       }
-      val classStartAt = classStartMillis(occurrence)
-      if (classStartAt > now) {
-        if (armClassStart(context, occurrence, classStartAt, persist = true)) {
-          scheduled++
+      if (ReminderContract.CLASS_START_KIND in enabledKinds) {
+        val classStartAt = classStartMillis(occurrence)
+        if (classStartAt > now) {
+          if (armClassStart(context, occurrence, classStartAt, persist = true)) {
+            scheduled++
+          }
+        } else {
+          skippedPast++
         }
-      } else {
-        skippedPast++
       }
     }
     return ScheduleResult(
@@ -496,19 +510,31 @@ object ClassReminderScheduler {
   }
 
   private fun cancelPersisted(context: Context): Int {
+    return cancelByKinds(
+      context,
+      setOf(ReminderContract.REMINDER_KIND, ReminderContract.CLASS_START_KIND),
+    )
+  }
+
+  private fun cancelByKinds(context: Context, kinds: Set<String>): Int {
     val p = prefs(context)
     val ids = p.getStringSet(KEY_IDS, emptySet()) ?: emptySet()
     var cancelled = 0
     val editor = p.edit()
+    val remaining = mutableSetOf<String>()
     for (stableId in ids) {
       val record = readRecord(context, stableId)
       val kind = record?.first ?: ReminderContract.REMINDER_KIND
+      if (kind !in kinds) {
+        remaining.add(stableId)
+        continue
+      }
       if (cancelByStableId(context, stableId, actionForKind(kind))) {
         cancelled++
       }
       editor.remove(keyFor(stableId))
     }
-    editor.remove(KEY_IDS)
+    editor.putStringSet(KEY_IDS, remaining)
     editor.apply()
     return cancelled
   }

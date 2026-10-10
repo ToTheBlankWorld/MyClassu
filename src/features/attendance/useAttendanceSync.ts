@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { syncPendingAttendance } from './attendanceSync';
+import { saveLastSyncResult, syncPendingAttendance } from './attendanceSync';
 
 /**
  * Best-effort outbox flush on app start. Silent by design: sync must never
@@ -10,7 +10,8 @@ export function useAttendanceSync(): void {
     let cancelled = false;
     const flush = async () => {
       try {
-        await syncPendingAttendance();
+        const result = await syncPendingAttendance();
+        await saveLastSyncResult(result);
       } catch {
         // Never surfaces: the outbox waits for the next launch.
       }

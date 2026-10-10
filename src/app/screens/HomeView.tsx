@@ -121,7 +121,7 @@ function HomeContent({ dashboard }: { dashboard: HomeDashboard }) {
                 <Stack gap="md" align="stretch">
                   {dashboard.upcomingPreview.map((entry, index) => (
                     <Stack
-                      key={`${entry.dateKey}-${entry.courseCode}`}
+                      key={`${entry.dateKey}-${entry.sessionId}`}
                       gap={0}
                       align="stretch"
                     >

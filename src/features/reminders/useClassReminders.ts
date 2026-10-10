@@ -1,40 +1,70 @@
 import { useEffect } from 'react';
 import { buildReminderPayloads } from './classReminders';
 import {
+  cancelClassStartAlarms,
+  cancelReminderAlarms,
   ensureReminderPermission,
   isReminderBridgeAvailable,
   scheduleReminders,
+  setAlarmSoundVibration,
 } from './reminderBridge';
-import { timetableService } from '../timetable/service/timetableService';
+import { loadReminderPrefs, type ReminderPrefs } from './reminderPrefs';
+import {
+  getActiveTimetableService,
+  useActiveTimetable,
+} from '../timetable/service/timetableStore';
+
+const previousPrefs: { current: ReminderPrefs | null } = { current: null };
 
 /**
- * App-start reminder sync: ensures the notification channel exists
- * (native, on first schedule), settles POST_NOTIFICATIONS once, then
- * replaces the native alarm set with the next upcoming occurrences.
- * Idempotent — every launch converges on the identical alarm set, and any
- * failure is swallowed so reminders can never break app start.
+ * Run one full reminder/alarm sync against the current prefs and active
+ * timetable. Called on app start, on timetable changes, and explicitly
+ * after preference toggles. Idempotent — every run converges on the
+ * identical alarm set. Never throws.
+ */
+export async function syncClassReminders(): Promise<void> {
+  try {
+    if (!isReminderBridgeAvailable()) {
+      return;
+    }
+    await ensureReminderPermission();
+    const prefs = await loadReminderPrefs();
+    await setAlarmSoundVibration(prefs.soundEnabled, prefs.vibrationEnabled);
+    const activeService = getActiveTimetableService();
+    const payloads = buildReminderPayloads(new Date(), activeService);
+    await scheduleReminders(payloads, {
+      reminders: prefs.remindersEnabled,
+      alarms: prefs.classStartAlarmsEnabled,
+    });
+    // Turning a kind off cancels only that kind — never the other.
+    const previous = previousPrefs.current;
+    if (previous) {
+      if (previous.remindersEnabled && !prefs.remindersEnabled) {
+        await cancelReminderAlarms();
+      }
+      if (previous.classStartAlarmsEnabled && !prefs.classStartAlarmsEnabled) {
+        await cancelClassStartAlarms();
+      }
+    }
+    previousPrefs.current = prefs;
+  } catch {
+    // Offline-first local feature: never let it surface to the user.
+  }
+}
+
+/**
+ * App-start + timetable-change sync. Preference toggles call
+ * [syncClassReminders] explicitly (see Settings) so changes apply
+ * immediately without waiting for a restart.
  */
 export function useClassReminders(): void {
+  const { service, ready } = useActiveTimetable();
+
   useEffect(() => {
-    let cancelled = false;
-    const sync = async () => {
-      try {
-        if (!isReminderBridgeAvailable()) {
-          return;
-        }
-        await ensureReminderPermission();
-        if (cancelled) {
-          return;
-        }
-        const payloads = buildReminderPayloads(new Date(), timetableService);
-        await scheduleReminders(payloads);
-      } catch {
-        // Offline-first local feature: never let it surface to the user.
-      }
-    };
-    sync();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (!ready) {
+      return;
+    }
+    syncClassReminders();
+    // Re-sync when the timetable data or its identity changes.
+  }, [ready, service]);
 }

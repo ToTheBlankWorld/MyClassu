@@ -7,15 +7,19 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 import {
   cancelClassStartAlarms,
+  cancelReminderAlarms,
   cancelTestClassStart,
   cancelTestReminder,
   canScheduleExactAlarms,
   getReminderPermissionStatus,
   getScheduledReminderIds,
   isReminderBridgeAvailable,
+  openExactAlarmSettings,
+  openNotificationSettings,
   scheduleReminders,
   scheduleTestClassStart,
   scheduleTestReminder,
+  setAlarmSoundVibration,
 } from './reminderBridge';
 
 /**
@@ -53,6 +57,26 @@ describe('reminderBridge — native module absent', () => {
     await expect(cancelClassStartAlarms()).rejects.toThrow(
       'ClassReminder native module is unavailable',
     );
+    await expect(cancelReminderAlarms()).rejects.toThrow(
+      'ClassReminder native module is unavailable',
+    );
+    await expect(setAlarmSoundVibration(true, true)).rejects.toThrow(
+      'ClassReminder native module is unavailable',
+    );
+  });
+
+  it('resolves settings shortcuts to false without the bridge', async () => {
+    await expect(openNotificationSettings()).resolves.toBe(false);
+    await expect(openExactAlarmSettings()).resolves.toBe(false);
+  });
+
+  it('runs a silent no-op sync without the bridge', async () => {
+    const { syncClassReminders } = jest.requireActual(
+      './useClassReminders',
+    ) as {
+      syncClassReminders: () => Promise<void>;
+    };
+    await expect(syncClassReminders()).resolves.toBeUndefined();
   });
 
   it('treats permission as granted off Android', async () => {

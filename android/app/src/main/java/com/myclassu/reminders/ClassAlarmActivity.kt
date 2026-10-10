@@ -340,12 +340,15 @@ class ClassAlarmActivity : AppCompatActivity() {
   // ------------------------------------------------------------------ alert
 
   private fun startAlert() {
+    val prefs = AlarmPrefs.read(this)
     val audio = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
     val silent = audio?.ringerMode == AudioManager.RINGER_MODE_SILENT
-    if (!silent) {
+    if (prefs.soundEnabled && !silent) {
       startSound(audio)
     }
-    startVibration()
+    if (prefs.vibrationEnabled) {
+      startVibration()
+    }
   }
 
   private fun startSound(audio: AudioManager?) {

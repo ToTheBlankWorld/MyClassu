@@ -25,7 +25,10 @@ interface NativeTestResult {
 }
 
 interface ClassReminderNative {
-  scheduleReminders(reminders: unknown[]): Promise<NativeScheduleResult>;
+  scheduleReminders(
+    reminders: unknown[],
+    options?: { reminders?: boolean; alarms?: boolean },
+  ): Promise<NativeScheduleResult>;
   cancelAllReminders(): Promise<NativeCancelResult>;
   cancelReminderAlarms(): Promise<NativeCancelResult>;
   cancelClassStartAlarms(): Promise<NativeCancelResult>;
@@ -43,6 +46,14 @@ interface ClassReminderNative {
     inSeconds: number,
   ): Promise<NativeTestResult>;
   cancelTestClassStart(): Promise<boolean>;
+  setAlarmSoundVibration(sound: boolean, vibration: boolean): Promise<boolean>;
+  openNotificationSettings(): Promise<boolean>;
+  openExactAlarmSettings(): Promise<boolean>;
+}
+
+export interface ScheduleKindOptions {
+  reminders?: boolean;
+  alarms?: boolean;
 }
 
 const native = NativeModules.ClassReminder as ClassReminderNative | undefined;
@@ -57,12 +68,14 @@ const unavailable = (): never => {
 
 export async function scheduleReminders(
   payloads: ClassReminderPayload[],
+  options: ScheduleKindOptions = {},
 ): Promise<NativeScheduleResult> {
   if (!native) {
     throw unavailable();
   }
   // One payload arms both the 5-minute reminder and the class-start
-  // alarm natively (distinct deterministic IDs — never colliding).
+  // alarm natively (distinct deterministic IDs — never colliding), unless
+  // the kind options gate one side off.
   return native.scheduleReminders(
     payloads.map(payload => ({
       dateKey: payload.dateKey,
@@ -76,7 +89,56 @@ export async function scheduleReminders(
       ...(payload.room ? { room: payload.room } : {}),
       ...(payload.instructor ? { instructor: payload.instructor } : {}),
     })),
+    {
+      ...(options.reminders !== undefined
+        ? { reminders: options.reminders }
+        : {}),
+      ...(options.alarms !== undefined ? { alarms: options.alarms } : {}),
+    },
   );
+}
+
+/** Persist alarm sound/vibration preferences for the native alarm screen. */
+export async function setAlarmSoundVibration(
+  sound: boolean,
+  vibration: boolean,
+): Promise<boolean> {
+  if (!native) {
+    throw unavailable();
+  }
+  return native.setAlarmSoundVibration(sound, vibration);
+}
+
+/** Open the app's system notification settings page. */
+export async function openNotificationSettings(): Promise<boolean> {
+  if (!native) {
+    return false;
+  }
+  try {
+    return await native.openNotificationSettings();
+  } catch {
+    return false;
+  }
+}
+
+/** Open the exact-alarm access page (or a fallback); false when refused. */
+export async function openExactAlarmSettings(): Promise<boolean> {
+  if (!native) {
+    return false;
+  }
+  try {
+    return await native.openExactAlarmSettings();
+  } catch {
+    return false;
+  }
+}
+
+/** Cancel only 5-minute reminders; class-start alarms are untouched. */
+export async function cancelReminderAlarms(): Promise<NativeCancelResult> {
+  if (!native) {
+    throw unavailable();
+  }
+  return native.cancelReminderAlarms();
 }
 
 /** Cancel only class-start alarms; reminders are untouched. */

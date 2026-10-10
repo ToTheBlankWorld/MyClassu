@@ -9,6 +9,8 @@ export { Badge, type BadgeProps } from './Badge';
 export { Chip, type ChipProps } from './Chip';
 export { Divider, type DividerProps } from './Divider';
 export { Stack, Row, type StackProps, type RowProps, type Gap } from './Stack';
+export { SwitchRow, type SwitchRowProps } from './SwitchRow';
+export { TextField, type TextFieldProps } from './TextField';
 export { SectionHeader, type SectionHeaderProps } from './SectionHeader';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { LoadingState, type LoadingStateProps } from './LoadingState';

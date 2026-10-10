@@ -28,14 +28,18 @@ The project is developed in explicit stages. Each stage is committed and pushed 
 - Unit tests (Jest), ESLint, Prettier, type-check wired up
 - Android debug build verified; app launch verified on a physical device
 
+### Implemented (Stages 3 – 9)
+
+- Home dashboard: now/next class hero with live countdown and progress, today timeline, coming-up preview (Stage 3)
+- Schedule screen: Monday-first week strip, week navigation, per-day timeline with schedule states (Stage 4)
+- Native 5-minute reminders: `AlarmManager` + receiver + channels, exact/inexact fallback, boot/timezone recovery, offline-first (Stage 5)
+- Class-start alarm: full-screen intent + native alarm Activity with looping sound/vibration, dismiss, lock-screen support (Stage 6)
+- Attendance response flow: I'm in class / I'm not in class + native reason picker, idempotent local store, offline outbox with Supabase sync boundary (Stage 7)
+- Attendance history and analytics: summary, subject breakdown, filters, reason insights, Monday-first weekly trend (Stage 8)
+- Settings and timetable management: editable persistent timetable (add/edit/delete with validation and overlap warnings), reminder/alarm/sound/vibration toggles honored natively, theme persistence, permission shortcuts, truthful cloud-sync status (Stage 9)
+
 ### Planned (next stages)
 
-- Today / weekly timetable UI with gesture-driven day switching
-- Next-class information and live countdown
-- Local persistence (SQLite) and cloud sync via Supabase
-- Class reminders and the class-start alarm (native Android `AlarmManager` + `BroadcastReceiver` + full-screen alarm experience)
-- Attendance marking ("I'm in class" / "I'm not attending") with skip reasons
-- Attendance history and analytics (daily, weekly, course-level, skip reasons)
 - Daily 6:00 PM report and email delivery
 - iOS support
 

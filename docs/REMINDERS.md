@@ -202,6 +202,28 @@ currently defer as `unmapped` — the local store is complete and
 authoritative on-device; no service-role keys, no secrets, RLS respected
 (own rows only) once identity exists.
 
+## Preferences and timetable edits (Stage 9)
+
+- `reminderPrefs` (AsyncStorage): 5-minute reminders, class-start alarms,
+  alarm sound, vibration. `syncClassReminders()` re-reads them on every
+  run; Settings toggles call it explicitly so changes apply immediately.
+  Disabling one kind cancels only that kind (`cancelReminderAlarms` /
+  `cancelClassStartAlarms`); enabling re-arms idempotently. Lead time
+  stays hardcoded at 5 minutes — no UI promises otherwise.
+- Sound/vibration prefs are pushed natively (`AlarmPrefs`) and read by
+  `ClassAlarmActivity` (on top of the silent-mode rule).
+- Editable timetable (`timetableStore`, AsyncStorage key
+  `myclassu.timetable.v1`): versioned JSON, bundled seed, stable IDs
+  preserved, courses never pruned, attendance store untouched by edits.
+  Every commit republishes to all screens and triggers an alarm resync;
+  deleting a session cancels only its future alarms.
+- Theme preference persists (`myclassu.themePreference.v1`); Stats trend
+  window persists (`myclassu.attendancePrefs.v1`).
+- Permission shortcuts open system pages (notifications, exact-alarm
+  access); full-screen availability has no reliable query API, which the
+  UI states honestly. Sync status reads live config/session/outbox state
+  and never fabricates success.
+
 ## Process-death note (fixed during Stage 5 verification)
 
 Returning to the app after the OS (or `am kill`) destroyed its process

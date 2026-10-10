@@ -1,4 +1,5 @@
 import { buildHomeDashboard } from './dashboard';
+import type { Timetable } from './data/timetable';
 
 /**
  * Home-dashboard behavior over the real bundled timetable, at deterministic
@@ -192,5 +193,41 @@ describe('buildHomeDashboard — presentation data', () => {
     const atStart = buildHomeDashboard(ist(5, 14, 0));
     expect(atStart.current?.courseCode).toBe('CSEN3141');
     expect(atStart.next?.minutesUntil).toBe(60); // next AFTER the current one
+  });
+});
+
+describe('buildHomeDashboard — duplicate course occurrences', () => {
+  it('keys the coming-up preview by session, not course code', () => {
+    // Two sessions of one course on the same day (user-added overlap):
+    // every preview entry must still carry a distinct stable identity.
+    const overlapping: Timetable = {
+      timezone: 'Asia/Kolkata',
+      courses: [
+        { id: 'c1', code: 'MECH3271', title: 'Total Quality Management' },
+      ],
+      sessions: [
+        {
+          id: 's1',
+          courseId: 'c1',
+          weekday: 'monday',
+          startTime: '10:00',
+          endTime: '10:50',
+        },
+        {
+          id: 's2',
+          courseId: 'c1',
+          weekday: 'monday',
+          startTime: '10:30',
+          endTime: '11:30',
+        },
+      ],
+    };
+    // Saturday morning: both Monday occurrences land in the preview.
+    const dash = buildHomeDashboard(ist(10, 8, 0), overlapping);
+    const keys = dash.upcomingPreview.map(
+      entry => `${entry.dateKey}-${entry.sessionId}`,
+    );
+    expect(keys.length).toBeGreaterThan(1);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });

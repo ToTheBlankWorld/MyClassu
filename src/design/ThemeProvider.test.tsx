@@ -1,7 +1,20 @@
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn(async () => null),
+  setItem: jest.fn(async () => undefined),
+  removeItem: jest.fn(async () => undefined),
+}));
+
 import React from 'react';
 import { Text, useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import TestRenderer, { act } from 'react-test-renderer';
-import { ThemeProvider, useTheme, useThemePreference } from './ThemeProvider';
+import {
+  loadThemePreference,
+  saveThemePreference,
+  ThemeProvider,
+  useTheme,
+  useThemePreference,
+} from './ThemeProvider';
 
 /**
  * Theme resolution behavior: system-following by default, explicit
@@ -83,5 +96,21 @@ describe('ThemeProvider', () => {
     expect(tree.root.findByProps({ testID: 'mode' }).props.children).toBe(
       'light',
     );
+  });
+
+  it('persists the preference and restores it on mount', async () => {
+    const storage = AsyncStorage as unknown as {
+      getItem: jest.Mock;
+      setItem: jest.Mock;
+    };
+    await saveThemePreference('dark');
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'myclassu.themePreference.v1',
+      'dark',
+    );
+    storage.getItem.mockResolvedValueOnce('dark');
+    await expect(loadThemePreference()).resolves.toBe('dark');
+    storage.getItem.mockResolvedValueOnce('banana');
+    await expect(loadThemePreference()).resolves.toBeNull();
   });
 });
