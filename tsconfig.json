@@ -4,5 +4,12 @@
     "types": ["jest", "node"]
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["**/node_modules", "**/Pods"]
+  // supabase/functions targets the Deno runtime (npm:/Deno imports) and is
+  // typechecked with `deno check` at deploy time, not by the app's tsc.
+  // Its shared logic is mirrored under Jest via _shared/*.test.ts.
+  "exclude": [
+    "**/node_modules",
+    "**/Pods",
+    "supabase/functions/send-attendance-report/index.ts"
+  ]
 }

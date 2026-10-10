@@ -1,20 +1,124 @@
 import { useEffect } from 'react';
-import { saveLastSyncResult, syncPendingAttendance } from './attendanceSync';
+import { getSupabaseClient } from '../../services/supabase/client';
+import type { SyncClient } from '../sync/timetableSync';
+import { getActiveTimetable } from '../timetable/service/timetableStore';
+import { loadReportPrefs } from '../reports/reportPrefs';
+import { syncTimetable } from '../sync/timetableSync';
+import { syncEmailSettings } from '../sync/emailSettingsSync';
+import {
+  saveLastSyncResult,
+  syncPendingAttendance,
+  type AttendanceSyncResult,
+} from './attendanceSync';
+
+export interface CloudSyncSummary extends AttendanceSyncResult {
+  timetable: {
+    coursesUpserted: number;
+    sessionsInserted: number;
+    sessionsUpdated: number;
+    errors: string[];
+  } | null;
+  emailSettings: boolean;
+}
 
 /**
- * Best-effort outbox flush on app start. Silent by design: sync must never
+ * Full cloud pipeline on app start (best-effort, silent):
+ * timetable mapping → attendance outbox → report preferences.
+ * Each stage degrades independently; local-first behavior never waits.
+ */
+export async function runCloudSync(): Promise<CloudSyncSummary> {
+  const summary: CloudSyncSummary = {
+    synced: 0,
+    failed: 0,
+    unmapped: 0,
+    deferred: false,
+    errors: [],
+    timetable: null,
+    emailSettings: false,
+  };
+  try {
+    const client = getSupabaseClient();
+    if (!client) {
+      summary.deferred = true;
+      return summary;
+    }
+    let userId: string | null = null;
+    try {
+      const { data, error } = await client.auth.getSession();
+      if (error) {
+        throw error;
+      }
+      userId = data.session?.user.id ?? null;
+    } catch {
+      userId = null;
+    }
+    if (!userId) {
+      summary.deferred = true;
+      return summary;
+    }
+    // The production client's PostgREST builders satisfy SyncClient at
+    // runtime; a direct assignment trips TS's depth limiter on the
+    // library's recursive generics, so the adaptation lives here alone.
+    const syncable = client as unknown as SyncClient;
+    try {
+      const timetableResult = await syncTimetable(
+        syncable,
+        userId,
+        getActiveTimetable(),
+      );
+      summary.timetable = {
+        coursesUpserted: timetableResult.coursesUpserted,
+        sessionsInserted: timetableResult.sessionsInserted,
+        sessionsUpdated: timetableResult.sessionsUpdated,
+        errors: timetableResult.errors,
+      };
+      summary.errors.push(
+        ...timetableResult.errors.map(error => `timetable: ${error}`),
+      );
+    } catch (error) {
+      summary.errors.push(
+        `timetable: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    try {
+      const reportPrefs = await loadReportPrefs();
+      const emailResult = await syncEmailSettings(
+        syncable,
+        userId,
+        reportPrefs,
+      );
+      summary.emailSettings = emailResult.synced;
+      if (emailResult.error) {
+        summary.errors.push(`email settings: ${emailResult.error}`);
+      }
+    } catch (error) {
+      summary.errors.push(
+        `email settings: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+    const attendance = await syncPendingAttendance();
+    summary.synced = attendance.synced;
+    summary.failed = attendance.failed;
+    summary.unmapped = attendance.unmapped;
+    summary.errors.push(...attendance.errors);
+    await saveLastSyncResult(summary);
+  } catch {
+    // Never surfaces: the outbox waits for the next launch.
+  }
+  return summary;
+}
+
+/**
+ * Best-effort cloud sync on app start. Silent by design: sync must never
  * break launch, and an empty/unconfigured backend simply defers.
  */
 export function useAttendanceSync(): void {
   useEffect(() => {
     let cancelled = false;
     const flush = async () => {
-      try {
-        const result = await syncPendingAttendance();
-        await saveLastSyncResult(result);
-      } catch {
-        // Never surfaces: the outbox waits for the next launch.
-      }
+      await runCloudSync();
       if (cancelled) {
         return;
       }

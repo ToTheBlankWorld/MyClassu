@@ -196,11 +196,12 @@ submitting.
 `attendanceSync` uploads only when a configured client, a user session,
 AND a server session-uuid mapping all exist (upsert on the established
 unique key `(class_session_id, date)`; per-record errors stay unsynced
-for retry; bookkeeping failures re-upload idempotently). The bundled
-timetable's local session IDs have no server uuids yet, so uploads
-currently defer as `unmapped` — the local store is complete and
-authoritative on-device; no service-role keys, no secrets, RLS respected
-(own rows only) once identity exists.
+for retry; bookkeeping failures re-upload idempotently). The mapping is
+populated by `timetableSync` (local course/session IDs → verified server
+uuids, stored only after the server confirms each row); records whose
+session has no verified mapping yet defer as `unmapped` — the local
+store is complete and authoritative on-device; no service-role keys, no
+secrets, RLS respected (own rows only) once identity exists.
 
 ## Preferences and timetable edits (Stage 9)
 

@@ -29,6 +29,7 @@ const TABLES = [
   'skip_reasons',
   'notification_settings',
   'email_settings',
+  'report_log',
 ];
 
 const ATTENDANCE_STATUSES = ['attended', 'skipped', 'pending', 'unconfirmed'];
@@ -73,6 +74,17 @@ describe('database migrations', () => {
 
   it('keeps one attendance record per session occurrence', () => {
     expect(sql).toContain('unique (class_session_id, date)');
+  });
+
+  it('ledgers email reports idempotently', () => {
+    expect(sql).toContain('unique (user_id, report_date, kind)');
+    expect(sql).toContain('unique (idempotency_key)');
+    expect(sql).toContain("check (kind in ('daily', 'weekly'))");
+    expect(sql).toContain("check (status in ('sending', 'sent', 'failed'))");
+  });
+
+  it('lets users read only their own report ledger', () => {
+    expect(sql).toContain('report_log_select_own');
   });
 
   it('requires sessions to end after they start', () => {

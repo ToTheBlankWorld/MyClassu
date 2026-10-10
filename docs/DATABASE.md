@@ -76,6 +76,10 @@ Planned default vocabulary: entertainment, study, work, personal, health, oversl
 
 `user_id` PK (FK, cascade) · `enabled` bool default false · `report_time` time default **`18:00`** · `email_address` text.
 
+### report_log
+
+`id` uuid PK · `user_id` (FK, cascade) · `report_date` date · `kind` CHECK daily/weekly · `idempotency_key` text · `status` CHECK sending/sent/failed · `provider_message_id` · `error`. Unique `(user_id, report_date, kind)` **and** unique `idempotency_key`. Users read own rows only; the scheduled Edge Function writes with the service role. Full delivery design: `docs/REPORTING.md`.
+
 ## Relationships
 
 ```
@@ -99,6 +103,7 @@ RLS is **enabled on every user-owned table**. Policies are always scoped to the 
 | skip_reasons          | SELECT: shared defaults (`user_id IS NULL`) **or** own rows; writes: own rows only |
 | notification_settings | `auth.uid() = user_id`                                                             |
 | email_settings        | `auth.uid() = user_id`                                                             |
+| report_log            | SELECT: own rows only (`auth.uid() = user_id`); writes are service-role only       |
 
 INSERT/UPDATE policies use `WITH CHECK` so a user can never create or move a row into another user's namespace. Deletes cascade from `auth.users`.
 

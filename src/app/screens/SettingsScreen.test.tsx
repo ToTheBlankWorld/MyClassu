@@ -47,6 +47,7 @@ describe('SettingsScreen', () => {
       'Timetable',
       'Attendance display',
       'Permissions',
+      'Email reports',
       'Cloud sync',
     ]) {
       expect(textsWith(tree, heading).length).toBeGreaterThan(0);
@@ -89,6 +90,37 @@ describe('SettingsScreen', () => {
     const tree = renderSettings(jest.fn());
     expect(textsWith(tree, 'Not configured').length).toBeGreaterThan(0);
     expect(textsWith(tree, 'Local-first for now').length).toBeGreaterThan(0);
+  });
+
+  it('renders the email reports section with toggles', () => {
+    const tree = renderSettings(jest.fn());
+    expect(textsWith(tree, 'Email reports').length).toBeGreaterThan(0);
+    const daily = tree.root.findByProps({ accessibilityLabel: 'Daily report' });
+    expect(daily.props.accessibilityState.checked).toBe(false);
+    act(() => {
+      daily.props.onValueChange(true);
+    });
+    expect(
+      tree.root.findByProps({ accessibilityLabel: 'Daily report' }).props
+        .accessibilityState.checked,
+    ).toBe(true);
+  });
+
+  it('rejects invalid report email addresses inline', () => {
+    const tree = renderSettings(jest.fn());
+    const field = tree.root.findByProps({ accessibilityLabel: 'Report email' });
+    act(() => {
+      field.props.onChangeText('not-an-email');
+      field.props.onBlur();
+    });
+    expect(
+      textsWith(tree, 'Enter a valid email address.').length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('shows mapped session counts in cloud sync', () => {
+    const tree = renderSettings(jest.fn());
+    expect(textsWith(tree, 'Sessions mapped').length).toBeGreaterThan(0);
   });
 
   it('keeps developer tools behind the __DEV__ gate', () => {

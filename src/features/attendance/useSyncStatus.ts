@@ -6,11 +6,13 @@ import {
 } from '../../services/supabase/client';
 import { getUnsyncedAttendance } from './attendanceBridge';
 import { loadLastSyncResult, type StoredSyncResult } from './attendanceSync';
+import { loadSessionMapping } from '../sync/sessionMapping';
 
 export interface SyncStatus {
   configured: boolean;
   signedIn: boolean;
   pending: number;
+  mappedSessions: number;
   lastResult: StoredSyncResult | null;
 }
 
@@ -24,6 +26,7 @@ export function useSyncStatus(): SyncStatus & { refresh: () => void } {
     configured: false,
     signedIn: false,
     pending: 0,
+    mappedSessions: 0,
     lastResult: null,
   });
 
@@ -51,7 +54,13 @@ export function useSyncStatus(): SyncStatus & { refresh: () => void } {
     } catch {
       lastResult = null;
     }
-    setStatus({ configured, signedIn, pending, lastResult });
+    let mappedSessions = 0;
+    try {
+      mappedSessions = Object.keys(await loadSessionMapping()).length;
+    } catch {
+      mappedSessions = 0;
+    }
+    setStatus({ configured, signedIn, pending, mappedSessions, lastResult });
   }, []);
 
   useFocusEffect(

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSupabaseClient } from '../../services/supabase/client';
+import { loadSessionMapping } from '../sync/sessionMapping';
 import type { Database } from '../../services/supabase/database.types';
 import {
   getUnsyncedAttendance,
@@ -18,12 +19,11 @@ type AttendanceInsert =
  * Honest boundaries (documented, not hidden):
  * - No Supabase configuration or session → everything deferred, nothing
  *   attempted, nothing lost. The outbox simply waits.
- * - The bundled timetable's session IDs are local strings, while the
- *   server `class_sessions.id` is a uuid FK. Records whose session has no
- *   server uuid mapping are reported as `unmapped` and skipped — attempting
- *   the upsert would only produce FK violations. The mapping arrives with
- *   timetable cloud sync (a later stage); until then the local store is
- *   complete and authoritative on-device.
+ * - Local session IDs are opaque strings while server `class_sessions.id`
+ *   is a uuid FK. Records whose session has no verified server mapping
+ *   (see `timetableSync`, populated only after successful upserts) are
+ *   reported as `unmapped` and skipped — attempting the upsert would only
+ *   produce FK violations.
  */
 export interface AttendanceSyncResult {
   synced: number;
@@ -69,11 +69,19 @@ export async function loadLastSyncResult(): Promise<StoredSyncResult | null> {
   }
 }
 
-/** Local session ID → server class_sessions uuid. Empty until cloud sync. */
-const SERVER_SESSION_IDS: ReadonlyMap<string, string> = new Map();
-
-export function resolveServerSessionId(localSessionId: string): string | null {
-  return SERVER_SESSION_IDS.get(localSessionId) ?? null;
+/**
+ * Local session ID → server class_sessions uuid, from the durable mapping
+ * store (populated by timetable sync). Unmapped sessions defer honestly —
+ * attempting the upsert would only produce FK violations.
+ */
+export async function resolveServerSessionId(
+  localSessionId: string,
+): Promise<string | null> {
+  try {
+    return (await loadSessionMapping())[localSessionId] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function syncPendingAttendance(): Promise<AttendanceSyncResult> {
@@ -117,9 +125,10 @@ export async function syncPendingAttendance(): Promise<AttendanceSyncResult> {
     return result;
   }
 
+  const sessionMap = await loadSessionMapping();
   const uploaded: string[] = [];
   for (const record of unsynced) {
-    const serverSessionId = resolveServerSessionId(record.sessionId);
+    const serverSessionId = sessionMap[record.sessionId];
     if (!serverSessionId) {
       result.unmapped += 1;
       continue;

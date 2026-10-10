@@ -138,13 +138,28 @@ Cloud record:  attendance_records row (same columns + user_id), unique
   trends use Monday-first weeks on record dateKeys with engine-provided
   scheduled counts; no projections are shown (they would mislead).
 - Sync is an offline outbox (`attendanceSync`): local-first save, upload
-  only with client + session + server session mapping, per-record retry.
-  Local session IDs have no server uuids yet, so uploads defer as
-  `unmapped` — documented, not attempted.
+  only with client + session + verified server session mapping
+  (populated by `timetableSync` on the first authenticated run),
+  per-record retry. Records whose session has no verified mapping yet
+  defer as `unmapped` — documented, not attempted, never lost.
 
-## 8. Future backend / email architecture
+## 8. Backend / email architecture (Stage 10 implemented)
 
-The daily report is planned as: local aggregation of the day's records → a server-side job (Supabase Edge Function) → email via an external mail service (AgentMail is the candidate). Any AgentMail credential lives only in the server environment behind a small `ReportSender` interface, and — per the offline-first rule — a failed email must never block or corrupt local attendance data.
+The daily report runs fully server-side so it never depends on the app
+being open: `pg_cron` (12:30 UTC = 18:00 Asia/Kolkata) → Edge Function
+`send-attendance-report` (service role) → AgentMail HTTPS API. The
+function reads each opted-in user's day from `class_sessions` +
+`attendance_records`, builds the email with the shared pure builders
+(`supabase/functions/_shared/attendance-report.ts`, unit-tested under
+Jest), and claims the send in `report_log` (`daily:<user>:<date>`)
+_before_ calling the provider — retries hit the unique constraint, not
+the inbox. A row moves to `sent` only on provider confirmation.
+
+Any AgentMail credential lives only in the Edge Function secrets, and —
+per the offline-first rule — a failed email never blocks or corrupts
+local attendance data. The weekly builder ships alongside (tested);
+its delivery cadence is intentionally unwired until a send day is
+chosen. Full design, secrets, and deploy steps: `docs/REPORTING.md`.
 
 ## 9. Timezone strategy
 

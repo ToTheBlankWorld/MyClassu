@@ -14,6 +14,7 @@ import {
   Stack,
   SwitchRow,
   Text,
+  TextField,
   useToast,
 } from '../../components';
 import { useTheme, useThemePreference } from '../../design';
@@ -25,6 +26,10 @@ import {
   openNotificationSettings,
 } from '../../features/reminders/reminderBridge';
 import { useReminderPrefs } from '../../features/reminders/reminderPrefs';
+import {
+  isValidEmail,
+  useReportPrefs,
+} from '../../features/reports/reportPrefs';
 import { syncClassReminders } from '../../features/reminders/useClassReminders';
 import {
   TREND_WEEK_OPTIONS,
@@ -175,10 +180,12 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           </Stack>
 
           <PermissionSection />
+          <ReportsSection />
           <SyncSection
             configured={sync.configured}
             signedIn={sync.signedIn}
             pending={sync.pending}
+            mappedSessions={sync.mappedSessions}
             lastSummary={describeLastSync(sync.lastResult)}
           />
 
@@ -309,15 +316,93 @@ function PermissionRow({
   );
 }
 
+/**
+ * Email report preferences. Everything here is honored: toggles and the
+ * recipient sync to the server row the scheduled job reads; the address
+ * is validated before it is stored anywhere. Delivery itself is
+ * server-side (6 PM IST cron) and reported honestly in Cloud sync —
+ * never claimed from here.
+ */
+function ReportsSection() {
+  const { prefs, update } = useReportPrefs();
+  const [draft, setDraft] = useState(prefs.email);
+  const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    setDraft(prefs.email);
+    setTouched(false);
+  }, [prefs.email]);
+
+  const invalid = touched && draft.trim() !== '' && !isValidEmail(draft);
+  const commitEmail = () => {
+    setTouched(true);
+    if (draft.trim() === '' || isValidEmail(draft)) {
+      update({ email: draft.trim() }).catch(() => undefined);
+    }
+  };
+
+  return (
+    <Stack gap="md" align="stretch">
+      <SectionHeader title="Email reports" />
+      <SwitchRow
+        label="Daily report"
+        description="Attendance summary at 6:00 PM IST."
+        value={prefs.dailyEnabled}
+        onValueChange={next => {
+          update({ dailyEnabled: next }).catch(() => undefined);
+        }}
+      />
+      <SwitchRow
+        label="Weekly report"
+        description="Monday–Sunday summary, when data allows."
+        value={prefs.weeklyEnabled}
+        onValueChange={next => {
+          update({ weeklyEnabled: next }).catch(() => undefined);
+        }}
+      />
+      <TextField
+        label="Report email"
+        accessibilityLabel="Report email"
+        value={draft}
+        onChangeText={text => {
+          setDraft(text);
+          setTouched(true);
+        }}
+        onBlur={commitEmail}
+        onSubmitEditing={commitEmail}
+        placeholder="you@example.com"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        error={invalid ? 'Enter a valid email address.' : undefined}
+      />
+      <SwitchRow
+        label="Report empty days"
+        description="Also email on days with no scheduled classes."
+        value={prefs.sendWhenEmpty}
+        onValueChange={next => {
+          update({ sendWhenEmpty: next }).catch(() => undefined);
+        }}
+      />
+      <Text variant="caption" color="muted">
+        {
+          'Delivery runs on the server at 6:00 PM IST once Supabase sign-in and email setup are complete. Nothing is sent from this device.'
+        }
+      </Text>
+    </Stack>
+  );
+}
+
 function SyncSection({
   configured,
   signedIn,
   pending,
+  mappedSessions,
   lastSummary,
 }: {
   configured: boolean;
   signedIn: boolean;
   pending: number;
+  mappedSessions: number;
   lastSummary: string | null;
 }) {
   return (
@@ -335,6 +420,7 @@ function SyncSection({
         label="Waiting upload"
         value={`${pending} record${pending === 1 ? '' : 's'}`}
       />
+      <StatusLine label="Sessions mapped" value={`${mappedSessions}`} />
       {lastSummary ? (
         <Text variant="caption" color="secondary">
           {lastSummary}

@@ -296,6 +296,53 @@ export interface Database {
           },
         ];
       };
+      report_log: {
+        Row: {
+          id: string;
+          user_id: string;
+          report_date: string;
+          kind: string;
+          idempotency_key: string;
+          status: string;
+          provider_message_id: string | null;
+          error: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          report_date: string;
+          kind: string;
+          idempotency_key: string;
+          status?: string;
+          provider_message_id?: string | null;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          report_date?: string;
+          kind?: string;
+          idempotency_key?: string;
+          status?: string;
+          provider_message_id?: string | null;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'report_log_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
