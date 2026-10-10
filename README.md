@@ -39,10 +39,12 @@ The project is developed in explicit stages. Each stage is committed and pushed 
 - Settings and timetable management: editable persistent timetable (add/edit/delete with validation and overlap warnings), reminder/alarm/sound/vibration toggles honored natively, theme persistence, permission shortcuts, truthful cloud-sync status (Stage 9)
 - Cloud sync and attendance email reports: local→server UUID mapping, timetable sync, attendance outbox with idempotent upserts, server-side 6 PM IST daily report via AgentMail Edge Function with report_log idempotency, weekly builder, validated report preferences (Stage 10)
 - End-to-end reliability hardening: full-coverage reminder planning, cloud re-sync on timetable edits, tested dev-alarm cancellation, lint scope hygiene, full regression (Stage 11)
+- Production release preparation: versioned identity, secure local signing, R8-minified Hermes release APK + AAB (signed, verified, smoke-tested on device), dependency audit, release docs (Stage 12 — see [docs/RELEASE.md](docs/RELEASE.md))
 
 ### Planned (next stages)
 
-- Production release preparation
+- Google Play listing and distribution review (signed AAB exists;
+  Supabase/AgentMail live deployment still required first)
 - iOS support
 
 ## Technology direction

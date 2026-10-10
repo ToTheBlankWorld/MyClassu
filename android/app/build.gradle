@@ -56,8 +56,11 @@ react {
 
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
+ * Stage 12: enabled and verified against the release smoke suite (alarms,
+ * attendance, reminders). If a future dependency breaks under R8, flip back
+ * to false with a note — never ship an untested minification change.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -92,15 +95,46 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        // Production signing. Values come ONLY from android/keystore.properties
+        // (gitignored, local to the release machine — see
+        // android/keystore.properties.example). The build fails loudly when
+        // the file or any value is missing: a release artifact must never be
+        // silently signed with the debug key.
+        release {
+            def keystorePropsFile = rootProject.file('keystore.properties')
+            if (!keystorePropsFile.exists()) {
+                throw new GradleException(
+                    "Release signing requires android/keystore.properties. " +
+                    "Copy android/keystore.properties.example and fill in real values. " +
+                    "See docs/RELEASE.md.")
+            }
+            def keystoreProps = new Properties()
+            keystorePropsFile.withInputStream { stream -> keystoreProps.load(stream) }
+            def releaseStoreFile = rootProject.file(keystoreProps['storeFile'])
+            if (!releaseStoreFile.exists()) {
+                throw new GradleException(
+                    "Release keystore not found: ${releaseStoreFile}. " +
+                    "See docs/RELEASE.md for creation steps.")
+            }
+            for (key in ['storePassword', 'keyAlias', 'keyPassword']) {
+                if (!keystoreProps[key]) {
+                    throw new GradleException(
+                        "Release signing requires '${key}' in android/keystore.properties. " +
+                        "See docs/RELEASE.md.")
+                }
+            }
+            storeFile releaseStoreFile
+            storePassword keystoreProps['storePassword']
+            keyAlias keystoreProps['keyAlias']
+            keyPassword keystoreProps['keyPassword']
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }

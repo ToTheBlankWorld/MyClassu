@@ -79,3 +79,12 @@ yarn-error.log
 .env
 .env.*
 !.env.example
+
+# Release signing — the keystore and its passwords live only on the
+# release machine. keystore.properties.example (placeholders only) is
+# the single tracked exception.
+android/keystore.properties
+android/*.keystore
+android/*.jks
+!android/app/debug.keystore
+!android/keystore.properties.example
