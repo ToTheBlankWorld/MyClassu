@@ -132,6 +132,13 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            // Side-by-side verification: debug installs as `com.myclassu.debug`
+            // (labeled "MyClassu Debug") so it never collides with — and can
+            // never overwrite — the production `com.myclassu` package or its
+            // data. Release builds are unaffected (see docs/RELEASE.md).
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+            resValue "string", "app_name", "MyClassu Debug"
         }
         release {
             signingConfig signingConfigs.release
