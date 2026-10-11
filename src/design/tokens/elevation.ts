@@ -14,7 +14,7 @@ export const elevation = {
   level0: {} as ViewStyle,
   /** Slightly raised: pressed surfaces, sticky bars. */
   level1: {
-    shadowColor: '#0B0A08',
+    shadowColor: '#000000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
@@ -22,7 +22,7 @@ export const elevation = {
   } as ViewStyle,
   /** Floating above content: toasts, menus. */
   level2: {
-    shadowColor: '#0B0A08',
+    shadowColor: '#000000',
     shadowOpacity: 0.16,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
@@ -30,7 +30,7 @@ export const elevation = {
   } as ViewStyle,
   /** Top of the world: modals, sheets. */
   level3: {
-    shadowColor: '#0B0A08',
+    shadowColor: '#000000',
     shadowOpacity: 0.22,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },

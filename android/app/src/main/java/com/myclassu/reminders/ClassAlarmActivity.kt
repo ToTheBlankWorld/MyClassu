@@ -3,6 +3,8 @@ package com.myclassu.reminders
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -223,6 +225,8 @@ class ClassAlarmActivity : AppCompatActivity() {
         text = reason.label
         textSize = 17f
         setTextColor(0xFFFFFFFF.toInt())
+        // Signal-blue identity, matching the app's dark-theme accent.
+        buttonTintList = ColorStateList.valueOf(Color.parseColor("#3B82F6"))
         setPadding(0, 18, 0, 18)
       }
       group.addView(radio)

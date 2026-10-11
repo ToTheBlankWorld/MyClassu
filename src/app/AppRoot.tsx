@@ -39,6 +39,12 @@ function ThemedNavigator() {
 
   return (
     <>
+      {/*
+        RN 0.87 enforces edge-to-edge: the status bar is transparent and the
+        themed Screen background (colors.background / colors.statusBar) shows
+        through — AMOLED black in dark mode, white in light mode. Only the
+        icon contrast (barStyle) is set here.
+      */}
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <NavigationContainer theme={navigationTheme}>
         <RootNavigator />

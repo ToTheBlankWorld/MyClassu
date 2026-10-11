@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Class-start alarm screen. Fixed dark treatment (alarms must render
-  identically with the app dead, so no theme bridge): warm near-black,
-  lagoon-teal accent, generous type scale. Mirrors the app's visual
+  Class-start alarm screen. Fixed AMOLED-black treatment (alarms must render
+  identically with the app dead, so no theme bridge): true black,
+  signal-blue accent, generous type scale. Mirrors the app's visual
   hierarchy: overline → subject → code → time → room → faculty → action.
 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121110"
+    android:background="#000000"
     android:fillViewport="true">
 
     <LinearLayout
@@ -32,7 +32,7 @@
             android:paddingTop="6dp"
             android:paddingBottom="6dp"
             android:text="TEST ALARM"
-            android:textColor="#6FC7BC"
+            android:textColor="#60A5FA"
             android:textSize="12sp"
             android:letterSpacing="0.12"
             android:visibility="gone" />
@@ -41,7 +41,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="CLASS STARTING"
-            android:textColor="#A19A8F"
+            android:textColor="#7D8BA0"
             android:textSize="13sp"
             android:letterSpacing="0.18" />
 
@@ -61,7 +61,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:gravity="center_horizontal"
-            android:textColor="#45AFA2"
+            android:textColor="#60A5FA"
             android:textSize="17sp"
             android:letterSpacing="0.06" />
 
@@ -80,7 +80,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:gravity="center_horizontal"
-            android:textColor="#A19A8F"
+            android:textColor="#7D8BA0"
             android:textSize="17sp" />
 
         <TextView
@@ -89,7 +89,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:gravity="center_horizontal"
-            android:textColor="#A19A8F"
+            android:textColor="#7D8BA0"
             android:textSize="17sp" />
 
         <LinearLayout
@@ -104,10 +104,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="56dp"
-                android:backgroundTint="#45AFA2"
+                android:backgroundTint="#3B82F6"
                 android:text="I'M IN CLASS"
                 android:textAllCaps="false"
-                android:textColor="#121110"
+                android:textColor="#FFFFFF"
                 android:textSize="17sp" />
 
             <Button
@@ -119,7 +119,7 @@
                 android:background="@drawable/alarm_outline_button"
                 android:text="I'M NOT IN CLASS"
                 android:textAllCaps="false"
-                android:textColor="#45AFA2"
+                android:textColor="#60A5FA"
                 android:textSize="17sp" />
 
         </LinearLayout>
@@ -137,7 +137,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_horizontal"
                 android:text="WHY DID YOU MISS IT?"
-                android:textColor="#A19A8F"
+                android:textColor="#7D8BA0"
                 android:textSize="13sp"
                 android:letterSpacing="0.18" />
 
@@ -164,7 +164,7 @@
                 android:layout_marginTop="12dp"
                 android:hint="Custom reason (optional)"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#5C564E"
+                android:textColorHint="#7D8BA0"
                 android:textSize="16sp"
                 android:inputType="textCapSentences"
                 android:maxLines="3"
@@ -187,10 +187,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:minHeight="56dp"
-                android:backgroundTint="#45AFA2"
+                android:backgroundTint="#3B82F6"
                 android:text="Submit"
                 android:textAllCaps="false"
-                android:textColor="#121110"
+                android:textColor="#FFFFFF"
                 android:textSize="17sp" />
 
             <Button
@@ -202,7 +202,7 @@
                 android:background="@drawable/alarm_outline_button"
                 android:text="Cancel"
                 android:textAllCaps="false"
-                android:textColor="#45AFA2"
+                android:textColor="#60A5FA"
                 android:textSize="17sp" />
 
         </LinearLayout>

@@ -48,6 +48,11 @@ export interface ThemeColors {
 
   /** Dimming overlay behind modals */
   scrim: string;
+
+  /** System status-bar background (matches the app background) */
+  statusBar: string;
+  /** System navigation-bar background (matches the app background) */
+  navigationBar: string;
 }
 
 export interface Theme {
@@ -66,46 +71,48 @@ export interface Theme {
 }
 
 const lightColors: ThemeColors = {
-  background: palette.gray25,
-  surface: palette.gray0,
-  surfaceRaised: palette.gray0,
-  surfaceSunken: palette.gray100,
-  textPrimary: palette.gray900,
-  textSecondary: palette.gray600,
-  textMuted: palette.gray400,
+  background: palette.surfaceLight,
+  surface: palette.surfaceLight,
+  surfaceRaised: palette.raisedLight,
+  surfaceSunken: palette.sunkenLight,
+  textPrimary: palette.ink900,
+  textSecondary: palette.slate600,
+  textMuted: palette.slate500,
   textOnAccent: palette.white,
   textOnDanger: palette.white,
-  border: palette.gray200,
-  borderStrong: palette.gray300,
-  accent: palette.teal600,
-  accentTint: 'rgba(46, 139, 127, 0.12)',
-  accentPressed: palette.teal700,
+  border: palette.borderLight,
+  borderStrong: palette.borderStrongLight,
+  accent: palette.blue500,
+  accentTint: 'rgba(37, 99, 235, 0.12)',
+  accentPressed: palette.blue600,
   success: palette.green600,
   successTint: 'rgba(62, 155, 95, 0.12)',
   warning: palette.yellow600,
   warningTint: 'rgba(217, 160, 60, 0.14)',
   danger: palette.red600,
   dangerTint: 'rgba(204, 85, 68, 0.12)',
-  scrim: 'rgba(11, 10, 8, 0.45)',
+  scrim: 'rgba(0, 0, 0, 0.45)',
+  statusBar: palette.surfaceLight,
+  navigationBar: palette.surfaceLight,
 };
 
 const darkColors: ThemeColors = {
-  background: palette.gray950,
-  surface: palette.gray900,
-  surfaceRaised: palette.gray800,
+  background: palette.black,
+  surface: palette.navySurface,
+  surfaceRaised: palette.navyRaised,
   // Distinct from background so wells, tracks and skeletons stay visible
   // when placed directly on it (dark-mode verification finding).
-  surfaceSunken: palette.gray850,
-  textPrimary: palette.gray25,
-  textSecondary: palette.gray400,
-  textMuted: palette.gray500,
-  textOnAccent: palette.gray950,
+  surfaceSunken: palette.navySunken,
+  textPrimary: palette.white,
+  textSecondary: palette.slateLight,
+  textMuted: palette.slateMutedDark,
+  textOnAccent: palette.white,
   textOnDanger: palette.white,
-  border: palette.gray700,
-  borderStrong: palette.gray600,
-  accent: palette.teal400,
-  accentTint: 'rgba(111, 199, 188, 0.14)',
-  accentPressed: palette.teal300,
+  border: palette.borderDark,
+  borderStrong: palette.borderStrongDark,
+  accent: palette.blue400,
+  accentTint: 'rgba(59, 130, 246, 0.16)',
+  accentPressed: palette.blue300,
   success: palette.green500,
   successTint: 'rgba(62, 155, 95, 0.18)',
   warning: palette.yellow500,
@@ -113,6 +120,8 @@ const darkColors: ThemeColors = {
   danger: palette.red500,
   dangerTint: 'rgba(204, 85, 68, 0.18)',
   scrim: 'rgba(0, 0, 0, 0.6)',
+  statusBar: palette.black,
+  navigationBar: palette.black,
 };
 
 export const lightTheme: Theme = {

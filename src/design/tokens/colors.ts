@@ -1,47 +1,56 @@
 /**
  * Raw color primitives for MyClassu.
  *
- * Stage 0: colors are intentionally *placeholders* arranged in semantic roles.
- * The palette will be finalized in the design stage; components must only ever
- * consume semantic tokens (see `theme.ts`), never these raw values.
+ * Two polished themes share one blue identity:
+ * - Dark: true AMOLED black with modern blue accents.
+ * - Light: clean white with the same blue accents.
  *
- * Guidance for the final palette:
- * - one restrained accent (no gradients, no purple/blue AI clichés)
- * - warm neutrals over cold grays for a calmer, more personal feel
+ * Components must only ever consume semantic tokens (see `theme.ts`),
+ * never these raw values.
+ *
+ * Guidance:
+ * - one restrained blue accent (no gradients, no purple/blue AI clichés)
+ * - cool slate neutrals; dark surfaces stay near-black for AMOLED depth
  * - tints are accent/success/warning/danger at low alpha for soft backgrounds
  */
 
 export const palette = {
-  // Neutrals (warm)
-  gray0: '#FFFFFF',
-  gray25: '#FBFAF8',
-  gray50: '#F5F3F0',
-  gray100: '#ECE9E4',
-  gray200: '#DDD9D2',
-  gray300: '#C5C0B7',
-  gray400: '#A19A8F',
-  gray500: '#7D766C',
-  gray600: '#5C564E',
-  gray700: '#423D37',
-  gray800: '#2B2823',
-  gray850: '#232019',
-  gray900: '#1B1915',
-  gray950: '#121110',
+  // Absolute grounds
+  black: '#000000',
+  white: '#FFFFFF',
 
-  // Primary accent — "lagoon" (deep teal)
-  teal300: '#6FC7BC',
-  teal400: '#45AFA2',
-  teal500: '#2E8B7F',
-  teal600: '#247067',
-  teal700: '#1C5850',
+  // Dark surfaces (near-black navy, keep AMOLED depth)
+  navySurface: '#080B12',
+  navyRaised: '#0D1320',
+  navySunken: '#111A2B',
+  navyTint: '#0B1B33',
 
-  // Secondary accent — "amber"
-  amber300: '#F5C877',
-  amber400: '#E8A94A',
-  amber500: '#C9862B',
-  amber600: '#A56B20',
+  // Dark text + borders
+  slateLight: '#B8C4D6',
+  slateMutedDark: '#7D8BA0',
+  borderDark: '#1C2738',
+  borderStrongDark: '#2A3B55',
 
-  // Status
+  // Light surfaces
+  surfaceLight: '#FFFFFF',
+  raisedLight: '#F8FAFC',
+  sunkenLight: '#F1F5F9',
+  blueTintLight: '#EFF6FF',
+
+  // Light text + borders
+  ink900: '#0F172A',
+  slate600: '#475569',
+  slate500: '#64748B',
+  borderLight: '#E2E8F0',
+  borderStrongLight: '#CBD5E1',
+
+  // Primary accent — "signal" (modern blue)
+  blue300: '#60A5FA',
+  blue400: '#3B82F6',
+  blue500: '#2563EB',
+  blue600: '#1D4ED8',
+
+  // Status (kept distinct + accessible on both black and white)
   green500: '#3E9B5F',
   green600: '#2F7C4A',
   yellow500: '#D9A03C',
@@ -50,6 +59,5 @@ export const palette = {
   red600: '#A93F31',
 
   // Overlays
-  scrim: '#0B0A08',
-  white: '#FFFFFF',
+  scrim: '#000000',
 } as const;
